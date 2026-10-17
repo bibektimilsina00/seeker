@@ -7,6 +7,8 @@ reading db/results.csv in real-time.
 
 import os
 import json
+import base64
+import time
 import mimetypes
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
@@ -161,6 +163,50 @@ class AdminHandler(BaseHTTPRequestHandler):
                 data = json.loads(body) if body else {}
                 status = tracker_service.start_tracker(data)
                 payload = json.dumps({"status": "success", "message": "Tracker started successfully", **status}).encode('utf-8')
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except Exception as e:
+                err_payload = json.dumps({"status": "error", "message": str(e)}).encode('utf-8')
+                self.send_response(500)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(err_payload)
+            return
+
+        if path == '/api/tracker/upload_image':
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else '{}'
+                data = json.loads(body) if body else {}
+                img_data_str = data.get('image', '')
+                filename = data.get('filename', f'preview_{int(time.time())}.png')
+                filename = os.path.basename(filename)
+                if not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif']):
+                    filename += '.png'
+
+                if ',' in img_data_str:
+                    img_data_str = img_data_str.split(',', 1)[1]
+
+                raw_bytes = base64.b64decode(img_data_str)
+
+                # Save file to template images directories
+                for d in ['template/whatsapp/images', 'template/whatsapp_redirect/images', 'template/custom_og_tags/images']:
+                    abs_d = os.path.join(BASE_DIR, d)
+                    os.makedirs(abs_d, exist_ok=True)
+                    with open(os.path.join(abs_d, filename), 'wb') as f:
+                        f.write(raw_bytes)
+
+                public_url = f"https://seeker.riocut.com/images/{filename}"
+                payload = json.dumps({
+                    "status": "success",
+                    "url": public_url,
+                    "filename": filename
+                }).encode('utf-8')
                 self.send_response(200)
                 self.send_cors_headers()
                 self.send_header('Content-Type', 'application/json')

