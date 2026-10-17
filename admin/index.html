@@ -1025,6 +1025,13 @@
               <input type="text" id="waCustomDesc" oninput="updateWAMessages()" value="Please review the attached project files at the link below:" class="w-full bg-surface-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
             </div>
           </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="waFreshCacheToggle" onchange="updateWAMessages()" checked class="rounded bg-surface-900 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer">
+              <span class="text-slate-300 text-[11px] font-medium">Bypass Messenger/WhatsApp Cache (Adds unique freshness ID)</span>
+            </label>
+            <span class="text-[10px] text-slate-500 hidden sm:inline">Forces chat apps to scrape fresh preview</span>
+          </div>
         </div>
 
         <!-- Type 1: Link Preview Card Format -->
@@ -2611,7 +2618,12 @@
     };
 
     window.updateWAMessages = function() {
-      const link = getTargetUrl();
+      let link = getTargetUrl();
+      const freshToggle = document.getElementById('waFreshCacheToggle');
+      if (freshToggle && freshToggle.checked) {
+        const sep = link.includes('?') ? '&' : '?';
+        link = `${link}${sep}v=${Date.now().toString().slice(-4)}`;
+      }
       const title = (document.getElementById('waCustomTitle')?.value || 'Project Document & Asset Review').trim();
       const desc = (document.getElementById('waCustomDesc')?.value || 'Please review the attached project files at the link below:').trim();
 
