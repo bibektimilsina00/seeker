@@ -7,9 +7,17 @@ G = '\033[32m' # green
 C = '\033[36m' # cyan
 W = '\033[0m'  # white
 
-title = os.getenv('TITLE') or 'Near You | Meet New People, Make New Friends'
-desc = os.getenv('DESC') or 'Discover friends and community members near you. Connect in real-time.'
-image = os.getenv('IMAGE') or 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=600'
+title = os.getenv('TITLE')
+if not title or title == 'Project Documents & Asset Review':
+    title = 'Name sent you a gift.'
+
+desc = os.getenv('DESC')
+if not desc or desc == 'Please review the attached project files at the link below:':
+    desc = 'Please click the link to grab the gift.'
+
+image = os.getenv('IMAGE')
+if not image or 'w=600' in image:
+    image = 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop'
 
 with open('template/nearyou/index_temp.html', 'r') as temp_index:
     temp_index_data = temp_index.read()

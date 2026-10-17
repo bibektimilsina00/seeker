@@ -238,6 +238,19 @@ def start_tracker(config_dict=None):
         if k not in env or not str(env[k]).strip():
             env[k] = default_val
 
+    # Purge stale corporate fallback text from previous sessions
+    if env.get('TITLE') in ['Project Documents & Asset Review', 'WhatsApp Group Invite']:
+        env['TITLE'] = defaults.get('TITLE', 'Name sent you a gift.')
+    if env.get('DESC') in ['Please review the attached project files at the link below:', 'WhatsApp Group Invite']:
+        env['DESC'] = defaults.get('DESC', 'Please click the link to grab the gift.')
+    if not env.get('IMAGE') or 'w=600' in env.get('IMAGE', ''):
+        env['IMAGE'] = defaults.get('IMAGE', 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop')
+
+    # Keep cfg aligned with resolved env
+    for k in ['TITLE', 'DESC', 'IMAGE']:
+        if k in env:
+            cfg[k.lower()] = env[k]
+
     # Save active config
     cfg['started_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_config(cfg)

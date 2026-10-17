@@ -73,7 +73,9 @@ jobs:
           script: |
             echo "==> Deploying Seeker to VPS..."
             cd /opt/seeker
+            git pull origin master || true
             docker compose pull
+            docker compose down || true
             docker compose up -d --remove-orphans
             echo "==> Verifying running container..."
             sleep 2
