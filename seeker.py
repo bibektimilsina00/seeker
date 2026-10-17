@@ -47,7 +47,7 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-kml_fname = args.kml
+kml_fname = getenv('KML') or args.kml
 port = int(getenv('PORT') or args.port)
 chk_upd = args.update
 print_v = args.version

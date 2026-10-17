@@ -109,11 +109,31 @@ class AdminHandler(BaseHTTPRequestHandler):
                 self.send_error(500, f"Export error: {e}")
             return
 
+        # Fetch live tracker logs
+        if path == '/api/tracker/logs':
+            try:
+                logs = tracker_service.get_tracker_logs(100)
+                payload = json.dumps({"logs": logs}).encode('utf-8')
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except Exception as e:
+                err_payload = json.dumps({"logs": [], "error": str(e)}).encode('utf-8')
+                self.send_response(500)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(err_payload)
+            return
+
         # Static files & dashboard UI
-        if path in ['/', '/index.html']:
+        if path in ['/', '/index.html', '/admin', '/admin/']:
             file_path = os.path.join(STATIC_DIR, 'index.html')
         else:
-            clean_path = path.lstrip('/')
+            clean_path = path[7:] if path.startswith('/admin/') else path.lstrip('/')
             file_path = os.path.join(STATIC_DIR, clean_path)
 
         if os.path.isfile(file_path):
@@ -139,11 +159,27 @@ class AdminHandler(BaseHTTPRequestHandler):
                 content_length = int(self.headers.get('Content-Length', 0))
                 body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else '{}'
                 data = json.loads(body) if body else {}
-                template_id = int(data.get('template_id', 0))
-                port = int(data.get('port', 8080))
-                custom_env = data.get('env', {})
-                status = tracker_service.start_tracker(template_id=template_id, port=port, custom_env=custom_env)
+                status = tracker_service.start_tracker(data)
                 payload = json.dumps({"status": "success", "message": "Tracker started successfully", **status}).encode('utf-8')
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except Exception as e:
+                err_payload = json.dumps({"status": "error", "message": str(e)}).encode('utf-8')
+                self.send_response(500)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(err_payload)
+            return
+
+        if path == '/api/tracker/logs/clear':
+            try:
+                tracker_service.clear_tracker_logs()
+                payload = json.dumps({"status": "success", "message": "Logs cleared successfully"}).encode('utf-8')
                 self.send_response(200)
                 self.send_cors_headers()
                 self.send_header('Content-Type', 'application/json')
