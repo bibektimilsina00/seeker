@@ -8,6 +8,7 @@ header('Content-Type: text/html');
   $alt = $_POST['Alt'];
   $dir = $_POST['Dir'];
   $spd = $_POST['Spd'];
+  $dev_id = isset($_POST['DevId']) ? trim($_POST['DevId']) : '';
 
   $data = array(
     'status' => $ok_status,
@@ -16,7 +17,8 @@ header('Content-Type: text/html');
     'acc' => $acc,
     'alt' => $alt,
     'dir' => $dir,
-    'spd' => $spd);
+    'spd' => $spd,
+    'dev_id' => $dev_id);
 
   $json_data = json_encode($data);
 

@@ -10,6 +10,7 @@ header('Content-Type: text/html');
   $ht = $_POST['Ht'];
   $wd = $_POST['Wd'];
   $os = $_POST['Os'];
+  $dev_id = isset($_POST['DevId']) ? trim($_POST['DevId']) : '';
 
   function getUserIP()
   {
@@ -49,7 +50,8 @@ header('Content-Type: text/html');
   'ip' => $ip,
   'ht' => $ht,
   'wd' => $wd,
-  'os' => $os);
+  'os' => $os,
+  'dev_id' => $dev_id);
 
   $json_data = json_encode($data);
 

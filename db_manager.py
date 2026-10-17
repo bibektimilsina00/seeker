@@ -41,6 +41,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS targets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             os TEXT,
             platform TEXT,
@@ -67,13 +68,43 @@ def init_db():
     ''')
     conn.commit()
 
+    # Migration: add device_id if missing in older schema
+    try:
+        cursor.execute('ALTER TABLE targets ADD COLUMN device_id TEXT')
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Create indexes for fast lookup & device history
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_targets_device_id ON targets(device_id)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_targets_timestamp ON targets(timestamp)')
+    conn.commit()
+
     # Check if empty, and migrate from results.csv if exists
     cursor.execute('SELECT COUNT(*) FROM targets')
     count = cursor.fetchone()[0]
     if count == 0 and os.path.exists(CSV_FILE):
         migrate_from_csv(conn)
 
+    backfill_device_ids(conn)
     conn.close()
+
+
+def backfill_device_ids(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, ip, os, browser, resolution, render FROM targets WHERE device_id IS NULL OR device_id = ''")
+        rows = cursor.fetchall()
+        if rows:
+            import hashlib
+            for r in rows:
+                t_id = r[0]
+                sig = f"{r[1]}_{r[2]}_{r[3]}_{r[4]}_{r[5]}"
+                dev_id = f"dev_{hashlib.md5(sig.encode()).hexdigest()[:8]}"
+                cursor.execute("UPDATE targets SET device_id = ? WHERE id = ?", (dev_id, t_id))
+            conn.commit()
+    except Exception as e:
+        print(f"[!] backfill_device_ids error: {e}")
 
 
 def migrate_from_csv(conn):
@@ -157,8 +188,16 @@ def insert_target(item):
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Determine or generate device_id
+    dev_id = item.get("device_id")
+    if not dev_id:
+        import hashlib
+        sig = f"{item.get('ip')}_{item.get('os')}_{item.get('browser')}_{item.get('resolution')}_{item.get('render')}"
+        dev_id = f"dev_{hashlib.md5(sig.encode()).hexdigest()[:8]}"
+
     # Normalize fields
     record = {
+        "device_id": str(dev_id),
         "os": str(item.get("os", "N/A")),
         "platform": str(item.get("platform", "N/A")),
         "cores": str(item.get("cores", "N/A")),
@@ -184,11 +223,11 @@ def insert_target(item):
 
     cursor.execute('''
         INSERT INTO targets (
-            os, platform, cores, ram, vendor, render, resolution,
+            device_id, os, platform, cores, ram, vendor, render, resolution,
             browser, ip, continent, country, region, city, org, isp,
             lat, lon, accuracy, altitude, direction, speed
         ) VALUES (
-            :os, :platform, :cores, :ram, :vendor, :render, :resolution,
+            :device_id, :os, :platform, :cores, :ram, :vendor, :render, :resolution,
             :browser, :ip, :continent, :country, :region, :city, :org, :isp,
             :lat, :lon, :accuracy, :altitude, :direction, :speed
         )
@@ -210,6 +249,93 @@ def get_all_targets():
         targets.append(dict(r))
     conn.close()
     return targets
+
+
+def get_devices():
+    """
+    Groups targets by device_id.
+    Returns a list of unique devices, each containing:
+      - device_id
+      - total_checkins
+      - gps_checkins
+      - first_seen
+      - last_seen
+      - latest (dict of most recent target telemetry)
+      - trail (list of all points chronologically for map route)
+    """
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM targets ORDER BY id ASC')
+    rows = cursor.fetchall()
+    conn.close()
+
+    devices_map = {}
+    for r in rows:
+        target = dict(r)
+        d_id = target.get("device_id")
+        if not d_id:
+            import hashlib
+            sig = f"{target.get('ip')}_{target.get('os')}_{target.get('browser')}_{target.get('resolution')}_{target.get('render')}"
+            d_id = f"dev_{hashlib.md5(sig.encode()).hexdigest()[:8]}"
+            target["device_id"] = d_id
+
+        if d_id not in devices_map:
+            devices_map[d_id] = {
+                "device_id": d_id,
+                "first_seen": target.get("timestamp"),
+                "last_seen": target.get("timestamp"),
+                "total_checkins": 0,
+                "gps_checkins": 0,
+                "latest": target,
+                "trail": []
+            }
+
+        dev = devices_map[d_id]
+        dev["total_checkins"] += 1
+        dev["last_seen"] = target.get("timestamp")
+        dev["latest"] = target
+
+        lat = target.get("lat")
+        lon = target.get("lon")
+        has_gps = (lat is not None and lon is not None)
+        if has_gps:
+            dev["gps_checkins"] += 1
+
+        dev["trail"].append({
+            "id": target.get("id"),
+            "timestamp": target.get("timestamp"),
+            "lat": lat,
+            "lon": lon,
+            "accuracy": target.get("accuracy"),
+            "altitude": target.get("altitude"),
+            "direction": target.get("direction"),
+            "speed": target.get("speed"),
+            "ip": target.get("ip"),
+            "city": target.get("city"),
+            "country": target.get("country"),
+            "os": target.get("os"),
+            "platform": target.get("platform"),
+            "browser": target.get("browser")
+        })
+
+    devices_list = list(devices_map.values())
+    # Sort devices by most recently active first
+    devices_list.sort(key=lambda d: d["latest"]["id"], reverse=True)
+    return devices_list
+
+
+def get_device_trail(device_id):
+    """
+    Returns full chronological trail for a specific device.
+    """
+    init_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM targets WHERE device_id = ? ORDER BY id ASC', (device_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def clear_db():

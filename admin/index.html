@@ -143,6 +143,34 @@
       height: 100vh !important;
       border-radius: 0 !important;
     }
+
+    /* Pulsing Current Fix Radar Pin */
+    .radar-current-pin {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radar-current-pulse {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(34, 211, 238, 0.4);
+      animation: radarPulse 1.8s infinite ease-out;
+    }
+    @keyframes radarPulse {
+      0% { transform: scale(0.4); opacity: 1; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* Route Playback Glowing Pulse */
+    .route-playback-pulse {
+      animation: playbackPing 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    @keyframes playbackPing {
+      75%, 100% { transform: scale(2.2); opacity: 0; }
+    }
   </style>
 </head>
 <body class="bg-[#070b14] text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-950 flex flex-col">
@@ -530,6 +558,57 @@
         </div>
       </div>
 
+      <!-- Device Route Trail Isolated Mode Floating HUD -->
+      <div id="deviceTrailHUD" class="absolute top-16 left-4 z-20 bg-surface-900/95 backdrop-blur-md border border-cyan-500/50 rounded-2xl p-3.5 text-xs text-slate-200 hidden shadow-2xl flex flex-col space-y-2.5 max-w-xs transition-all duration-300 ring-1 ring-cyan-500/20">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2 text-cyan-400 font-bold">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span id="deviceTrailHUDTitle">Device History Route</span>
+          </div>
+          <button onclick="clearDeviceHistoryIsolation()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition" title="Show All Devices">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-1 bg-surface-950/80 p-2.5 rounded-xl border border-slate-800 text-[11px]">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Device ID:</span>
+            <span id="deviceTrailHUDDevId" class="font-mono text-cyan-300 font-bold">dev_xxxx</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Model / OS:</span>
+            <span id="deviceTrailHUDDeviceModel" class="text-slate-200 font-semibold truncate max-w-[150px]">Android 10</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono bg-surface-950 p-2.5 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-slate-500 block text-[10px]">Trail Waypoints</span>
+            <span id="deviceTrailHUDPoints" class="text-emerald-400 font-bold text-sm">0 Fixes</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px]">Route Distance</span>
+            <span id="deviceTrailHUDDistance" class="text-cyan-400 font-bold text-sm">0.00 km</span>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center space-x-1.5 pt-0.5">
+          <button id="playRouteBtn" onclick="toggleRoutePlayback()" class="flex-1 py-1.5 px-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold rounded-lg text-center transition flex items-center justify-center space-x-1 shadow-md shadow-cyan-900/30">
+            <i id="playRouteIcon" data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            <span id="playRouteText">Play Route</span>
+          </button>
+          <button onclick="fitDeviceTrailBounds()" class="py-1.5 px-2 bg-surface-800 hover:bg-surface-700 text-slate-200 font-medium rounded-lg transition border border-slate-700 flex items-center justify-center space-x-1" title="Fit trail to screen">
+            <i data-lucide="maximize" class="w-3 h-3"></i>
+            <span>Fit</span>
+          </button>
+          <button onclick="clearDeviceHistoryIsolation()" class="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg transition border border-slate-700 flex items-center justify-center space-x-1" title="Show All Devices">
+            <i data-lucide="users" class="w-3 h-3 text-cyan-400"></i>
+            <span>All</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Map Floating Trajectory Summary (visible when trajectory has > 1 point) -->
       <div id="trajectoryBanner" class="absolute bottom-4 left-4 z-20 bg-surface-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 hidden shadow-xl flex items-center space-x-3">
         <div class="flex items-center space-x-1.5 text-cyan-400 font-semibold">
@@ -546,7 +625,43 @@
 
     <!-- Filters, Search & Table Section -->
     <div class="bg-surface-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
-      
+
+      <!-- Telemetry Mode Bar -->
+      <div class="px-4 py-3 sm:px-6 bg-surface-950/70 border-b border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        
+        <!-- View Mode Switcher -->
+        <div class="flex items-center flex-wrap gap-2.5">
+          <div class="inline-flex p-1 bg-surface-900 rounded-xl border border-slate-700/80 shadow-inner">
+            <button id="viewModeDevicesBtn" onclick="setViewMode('devices')" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-200 bg-cyan-600 text-white shadow-md">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+              <span>Unique Devices</span>
+              <span id="badgeDeviceCount" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-950/80 text-cyan-200 border border-cyan-400/30 font-mono">0</span>
+            </button>
+            <button id="viewModeLogsBtn" onclick="setViewMode('logs')" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-200">
+              <i data-lucide="history" class="w-3.5 h-3.5"></i>
+              <span>All Check-in Logs</span>
+              <span id="badgeLogsCount" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700 font-mono">0</span>
+            </button>
+          </div>
+
+          <!-- Active Isolation Indicator -->
+          <div id="activeDeviceFilterBanner" class="hidden items-center space-x-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-xs text-cyan-300">
+            <span>Route Focused: <strong id="activeDeviceFilterId" class="font-mono text-cyan-400 font-bold">dev_xxxx</strong></span>
+            <button onclick="clearDeviceHistoryIsolation()" class="text-cyan-400 hover:text-white p-0.5 ml-1 transition" title="Clear filter & show all">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode Explanation Text -->
+        <div class="flex items-center space-x-2 text-xs text-slate-400">
+          <span id="viewModeHintText" class="text-[11px] text-slate-400">
+            <span class="text-cyan-400 font-semibold">Unique Devices Mode:</span> Consolidated device fleet. Click <strong class="text-emerald-400">"View Route Trail"</strong> on any device to isolate its path on the map!
+          </span>
+        </div>
+
+      </div>
+
       <!-- Toolbar -->
       <div class="p-4 sm:px-6 border-b border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
@@ -602,11 +717,11 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="border-b border-slate-800 bg-surface-950/60 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              <th class="py-3.5 px-4"># / Fix Status</th>
-              <th class="py-3.5 px-4">Device & Hardware</th>
-              <th class="py-3.5 px-4">IP & Network Recon</th>
-              <th class="py-3.5 px-4">Coordinates & Location</th>
-              <th class="py-3.5 px-4 text-right">Actions</th>
+              <th id="thCol1" class="py-3.5 px-4">Device & Identity</th>
+              <th id="thCol2" class="py-3.5 px-4">Check-ins & Activity</th>
+              <th id="thCol3" class="py-3.5 px-4">IP & Recon</th>
+              <th id="thCol4" class="py-3.5 px-4">Latest Fix / Coords</th>
+              <th id="thCol5" class="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody id="targetTableBody" class="divide-y divide-slate-800/60 text-sm">
@@ -967,6 +1082,51 @@
         </div>
         <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
           Close Inspector
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Device Check-in History & Trail Modal -->
+  <div id="deviceHistoryModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-surface-900 border border-cyan-500/40 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+      
+      <!-- Top Accent Bar -->
+      <div class="h-1.5 w-full bg-gradient-to-r from-cyan-500 via-emerald-400 to-indigo-500 shrink-0"></div>
+
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 bg-surface-850 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3">
+          <div id="devModalIcon" class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-md">
+            <i data-lucide="smartphone" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 id="devModalTitle" class="font-bold text-base text-slate-100">Device Telemetry History</h3>
+              <span id="devModalBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">dev_xxxx</span>
+            </div>
+            <p id="devModalSubtitle" class="text-xs text-slate-400">Total Check-ins: 0 • First seen: --</p>
+          </div>
+        </div>
+        <button onclick="closeDeviceHistoryModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-surface-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div id="devModalContent" class="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-surface-950/60 flex items-center justify-between shrink-0">
+        <button id="devModalViewOnMapBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white transition flex items-center space-x-2 shadow-lg shadow-cyan-900/40">
+          <i data-lucide="route" class="w-4 h-4"></i>
+          <span>Isolate Route on Map</span>
+        </button>
+        <button onclick="closeDeviceHistoryModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+          Close
         </button>
       </div>
 
@@ -1372,6 +1532,11 @@
   <script>
     // Global State
     let allTargets = [];
+    let allDevices = [];
+    let viewMode = 'devices'; // 'devices' (default unique devices) or 'logs' (all individual check-in logs)
+    let activeDeviceTrailId = null; // null for fleet overview, or string device_id (e.g. 'dev_3f18016c')
+    let routePlaybackTimer = null;
+    let routePlaybackMarker = null;
     let activeFilter = 'all';
     let searchQuery = '';
     let autoRefresh = true;
@@ -1969,7 +2134,7 @@
       }
     };
 
-    // Render Markers & Path on Map (CLEAN SLEEK PINS)
+    // Render Markers & Path on Map (Fleet or Isolated Device Trail)
     function updateMapMarkers(targets) {
       if (!map || !markersLayer) return;
 
@@ -1977,48 +2142,226 @@
       accuracyLayer.clearLayers();
       trajectoryLayer.clearLayers();
 
-      const validGpsTargets = [];
-      const validPoints = [];
+      const trajBanner = document.getElementById('trajectoryBanner');
+      const devHud = document.getElementById('deviceTrailHUD');
 
-      // Sort targets chronologically
-      const sorted = [...targets].sort((a, b) => a.id - b.id);
-      const latestId = sorted.length > 0 ? sorted[sorted.length - 1].id : null;
+      // ----------------------------------------------------
+      // CASE 1: ISOLATED SINGLE DEVICE ROUTE TRAIL
+      // ----------------------------------------------------
+      if (activeDeviceTrailId) {
+        if (trajBanner) trajBanner.classList.add('hidden');
+        const dev = allDevices.find(d => d.device_id === activeDeviceTrailId);
+        if (!dev) return;
 
-      sorted.forEach(t => {
-        const lat = cleanCoord(t.lat);
-        const lon = cleanCoord(t.lon);
+        // Collect all valid GPS points in chronological order
+        const validPoints = [];
+        const validRecords = [];
+        const sortedTrail = [...dev.trail].sort((a, b) => (a.id || 0) - (b.id || 0));
 
-        if (lat !== null && lon !== null) {
-          validGpsTargets.push(t);
-          validPoints.push([lat, lon]);
+        sortedTrail.forEach(pt => {
+          const lat = cleanCoord(pt.lat);
+          const lon = cleanCoord(pt.lon);
+          if (lat !== null && lon !== null) {
+            validPoints.push([lat, lon]);
+            validRecords.push(pt);
+          }
+        });
 
-          const acc = cleanCoord(t.accuracy);
-          const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
-          const isLatest = (t.id === latestId);
+        // Update Device HUD
+        if (devHud) {
+          devHud.classList.remove('hidden');
+          document.getElementById('deviceTrailHUDDevId').textContent = dev.device_id;
+          const model = dev.latest.platform || dev.latest.os || 'Unknown Device';
+          document.getElementById('deviceTrailHUDDeviceModel').textContent = model;
+          document.getElementById('deviceTrailHUDPoints').textContent = `${validPoints.length} Fixes (${dev.total_checkins} Total)`;
+        }
 
-          // Draw Accuracy Circle if enabled
-          if (showAccuracy && acc && acc > 0) {
+        if (validPoints.length === 0) {
+          if (devHud) document.getElementById('deviceTrailHUDDistance').textContent = '0.00 km (No GPS)';
+          document.getElementById('mapGpsBadge').textContent = '0 GPS Fixes';
+          return;
+        }
+
+        // Calculate total distance traveled
+        let totalDistanceMeters = 0;
+        for (let i = 0; i < validPoints.length - 1; i++) {
+          totalDistanceMeters += calculateDistance(
+            validPoints[i][0], validPoints[i][1],
+            validPoints[i+1][0], validPoints[i+1][1]
+          );
+        }
+        const distText = totalDistanceMeters > 1000 
+          ? `${(totalDistanceMeters / 1000).toFixed(2)} km`
+          : `${Math.round(totalDistanceMeters)} meters`;
+        if (devHud) document.getElementById('deviceTrailHUDDistance').textContent = distText;
+
+        // Draw animated trajectory route connecting waypoints
+        if (validPoints.length > 1) {
+          const polyline = L.polyline(validPoints, {
+            color: '#22d3ee',
+            weight: 3.5,
+            opacity: 0.9,
+            className: 'trajectory-path'
+          });
+          polyline.addTo(trajectoryLayer);
+        }
+
+        // Plot each waypoint pin
+        validRecords.forEach((pt, index) => {
+          const lat = cleanCoord(pt.lat);
+          const lon = cleanCoord(pt.lon);
+          const acc = cleanCoord(pt.accuracy);
+          const isLatest = (index === validRecords.length - 1);
+          const isFirst = (index === 0);
+          const waypointNum = index + 1;
+
+          // Accuracy Circle on latest or if accuracy toggle is on
+          if (showAccuracy && acc && acc > 0 && (isLatest || showAccuracy)) {
             L.circle([lat, lon], {
               radius: acc,
               color: isLatest ? '#22d3ee' : '#10b981',
               fillColor: isLatest ? '#22d3ee' : '#10b981',
+              fillOpacity: isLatest ? 0.15 : 0.08,
+              weight: 1.5,
+              dashArray: '4, 4'
+            }).addTo(accuracyLayer);
+          }
+
+          let pinHtml = '';
+          if (isLatest) {
+            // Glowing pulsing radar pin for the latest current fix
+            pinHtml = `
+              <div class="radar-current-pin cursor-pointer group">
+                <div class="radar-current-pulse"></div>
+                <div class="relative w-8 h-8 rounded-full bg-surface-950 border-2 border-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/50 transition-transform duration-200 group-hover:scale-125 z-10">
+                  <span class="font-mono text-[9px] font-black text-cyan-300">#${waypointNum}</span>
+                </div>
+                <div class="absolute -bottom-4 bg-cyan-950/95 border border-cyan-500/70 px-1.5 py-0.2 rounded text-[8px] font-black text-cyan-300 uppercase tracking-tighter whitespace-nowrap shadow-md">
+                  CURRENT FIX
+                </div>
+              </div>
+            `;
+          } else if (isFirst) {
+            // Start waypoint pin
+            pinHtml = `
+              <div class="clean-pin-wrapper cursor-pointer group">
+                <div class="relative flex flex-col items-center">
+                  <div class="w-6 h-6 rounded-full bg-surface-950 border-2 border-indigo-400 flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-125">
+                    <span class="font-mono text-[9px] font-bold text-indigo-300">#1</span>
+                  </div>
+                  <div class="w-1.5 h-1.5 rounded-full mt-0.5 bg-indigo-400"></div>
+                  <div class="absolute -bottom-3.5 bg-indigo-950/90 border border-indigo-500/60 px-1 py-0.2 rounded text-[7px] font-bold text-indigo-300 uppercase whitespace-nowrap">
+                    START
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            // Intermediate waypoint
+            pinHtml = `
+              <div class="clean-pin-wrapper cursor-pointer group">
+                <div class="relative flex flex-col items-center">
+                  <div class="w-5 h-5 rounded-full bg-surface-950 border-2 border-emerald-400 flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-125">
+                    <span class="font-mono text-[8px] font-bold text-emerald-300">#${waypointNum}</span>
+                  </div>
+                  <div class="w-1 h-1 rounded-full mt-0.5 bg-emerald-400"></div>
+                </div>
+              </div>
+            `;
+          }
+
+          const icon = L.divIcon({
+            className: 'custom-waypoint-pin',
+            html: pinHtml,
+            iconSize: isLatest ? [42, 42] : [26, 32],
+            iconAnchor: isLatest ? [21, 21] : [13, 26]
+          });
+
+          const marker = L.marker([lat, lon], { icon: icon, zIndexOffset: isLatest ? 500 : 100 });
+
+          const gmapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+          const popupHtml = `
+            <div class="p-1 space-y-2 text-xs">
+              <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5">
+                <div class="flex items-center space-x-1.5">
+                  <span class="px-1.5 py-0.5 rounded font-mono font-bold ${isLatest ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'} text-[10px] border">
+                    Waypoint #${waypointNum} ${isLatest ? '• CURRENT' : isFirst ? '• START' : ''}
+                  </span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">${formatTimestamp(pt.timestamp)}</span>
+              </div>
+              <div class="space-y-1 font-mono text-[11px]">
+                <div class="text-slate-300">
+                  <strong class="text-slate-400 font-sans">Device:</strong> 
+                  <span class="text-cyan-400 font-bold">${dev.device_id}</span>
+                </div>
+                <div class="text-emerald-400 font-bold">
+                  ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                </div>
+                ${acc ? `<div class="text-slate-400 text-[10px]">Accuracy: ±${acc.toFixed(1)}m</div>` : ''}
+              </div>
+              <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-1 text-[11px]">
+                <a href="${gmapsUrl}" target="_blank" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-cyan-400 transition">
+                  Google Maps ↗
+                </a>
+                <button onclick="clearDeviceHistoryIsolation()" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-slate-300 transition">
+                  Show All Devices
+                </button>
+              </div>
+            </div>
+          `;
+          marker.bindPopup(popupHtml, { maxWidth: 280 });
+          markersLayer.addLayer(marker);
+        });
+
+        document.getElementById('mapGpsBadge').textContent = `${validPoints.length} Trail Waypoints`;
+
+        // Fit bounds to trail
+        const bounds = L.latLngBounds(validPoints);
+        map.fitBounds(bounds, { maxZoom: 16, padding: [60, 60] });
+        return;
+      }
+
+      // ----------------------------------------------------
+      // CASE 2: FLEET OVERVIEW (SHOW LATEST PER UNIQUE DEVICE)
+      // ----------------------------------------------------
+      if (devHud) devHud.classList.add('hidden');
+      if (trajBanner) trajBanner.classList.add('hidden');
+
+      const validGpsPoints = [];
+
+      allDevices.forEach((dev) => {
+        const t = dev.latest;
+        if (!t) return;
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+
+        if (lat !== null && lon !== null) {
+          validGpsPoints.push([lat, lon]);
+          const acc = cleanCoord(t.accuracy);
+          const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
+
+          if (showAccuracy && acc && acc > 0) {
+            L.circle([lat, lon], {
+              radius: acc,
+              color: '#10b981',
+              fillColor: '#10b981',
               fillOpacity: 0.1,
               weight: 1.5,
               dashArray: '4, 4'
             }).addTo(accuracyLayer);
           }
 
-          // Clean, sleek, minimalist map marker pin
-          const pinColor = isLatest ? '#22d3ee' : '#10b981';
           const customPinHtml = `
             <div class="clean-pin-wrapper cursor-pointer group" onclick="selectTargetForBearing(${t.id})">
               <div class="relative flex flex-col items-center">
-                <!-- Pin Bubble -->
-                <div class="w-6 h-6 rounded-full bg-surface-950 border-2 flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-125" style="border-color: ${pinColor}; box-shadow: 0 0 10px ${pinColor}40;">
-                  <span class="font-mono text-[9px] font-bold" style="color: ${pinColor};">#${t.id}</span>
+                <div class="w-7 h-7 rounded-full bg-surface-950 border-2 border-emerald-400 flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-125" style="box-shadow: 0 0 10px #10b98150;">
+                  <span class="text-xs">${isMobile ? '📱' : '💻'}</span>
                 </div>
-                <!-- Needle Pointer -->
-                <div class="w-1.5 h-1.5 rounded-full mt-0.5" style="background: ${pinColor}; box-shadow: 0 0 5px ${pinColor};"></div>
+                <div class="w-1.5 h-1.5 rounded-full mt-0.5 bg-emerald-400"></div>
+                <div class="absolute -bottom-3 bg-surface-950/90 border border-emerald-500/50 px-1 py-0.2 rounded text-[7px] font-mono font-bold text-emerald-300 uppercase whitespace-nowrap shadow-sm">
+                  ${dev.device_id.substring(0, 8)}
+                </div>
               </div>
             </div>
           `;
@@ -2026,26 +2369,21 @@
           const pinIcon = L.divIcon({
             className: 'custom-clean-pin',
             html: customPinHtml,
-            iconSize: [26, 32],
-            iconAnchor: [13, 30]
+            iconSize: [28, 36],
+            iconAnchor: [14, 30]
           });
 
           const marker = L.marker([lat, lon], { icon: pinIcon });
 
-          // Interactive Popup
           const gmapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-          const appleMapsUrl = `https://maps.apple.com/?q=${lat},${lon}`;
-          const wazeUrl = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
-          const dmsCoords = `${toDMS(lat, true)}, ${toDMS(lon, false)}`;
-
           const popupHtml = `
             <div class="p-1 space-y-2 text-xs">
               <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5">
                 <div class="flex items-center space-x-1.5">
-                  <span class="px-1.5 py-0.5 rounded font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 text-[10px]">
-                    #${t.id}
+                  <span class="px-1.5 py-0.5 rounded font-mono font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 text-[10px]">
+                    ${dev.device_id}
                   </span>
-                  <span class="font-semibold text-slate-100">${t.platform || 'Device'}</span>
+                  <span class="font-semibold text-slate-100 truncate max-w-[120px]">${t.platform || 'Device'}</span>
                 </div>
                 <span class="text-[10px] text-slate-400">${isMobile ? '📱 Mobile' : '💻 Laptop'}</span>
               </div>
@@ -2063,26 +2401,24 @@
                 <div class="text-emerald-400 font-bold">
                   ${lat.toFixed(6)}, ${lon.toFixed(6)}
                 </div>
-                <div class="text-[10px] text-slate-400">
-                  ${dmsCoords}
+                <div class="text-cyan-300 font-semibold text-[10px]">
+                  🎯 ${dev.total_checkins} Check-ins (${dev.gps_checkins} GPS Fixes)
                 </div>
-                ${acc ? `
-                  <div class="text-slate-400 text-[10px]">
-                    Accuracy: ±${acc.toFixed(1)}m ${cleanCoord(t.altitude) ? `• Alt: ${cleanCoord(t.altitude).toFixed(0)}m` : ''}
-                  </div>
-                ` : ''}
               </div>
 
-              <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-1 text-[11px]">
-                <a href="${gmapsUrl}" target="_blank" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-cyan-400 transition flex items-center space-x-1">
-                  <span>Google Maps ↗</span>
-                </a>
-                <button onclick="selectTargetForBearing(${t.id})" class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium transition">
-                  Track Line
+              <div class="pt-2 border-t border-slate-700/80 flex flex-col space-y-1.5 text-[11px]">
+                <button onclick="isolateDeviceHistory('${dev.device_id}')" class="w-full py-1.5 px-2 rounded-lg bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold transition flex items-center justify-center space-x-1.5 shadow-md">
+                  <i data-lucide="route" class="w-3.5 h-3.5"></i>
+                  <span>View Route Trail (${dev.gps_checkins} fixes)</span>
                 </button>
-                <button onclick="openModal(${t.id})" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
-                  Details
-                </button>
+                <div class="flex items-center justify-between gap-1">
+                  <a href="${gmapsUrl}" target="_blank" class="flex-1 py-1 px-2 rounded bg-surface-800 hover:bg-surface-700 text-cyan-400 text-center transition">
+                    Google Maps ↗
+                  </a>
+                  <button onclick="openDeviceHistoryModal('${dev.device_id}')" class="flex-1 py-1 px-2 rounded bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+                    Logs (${dev.total_checkins})
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -2092,46 +2428,159 @@
         }
       });
 
-      // Update Map Badge
-      document.getElementById('mapGpsBadge').textContent = `${validPoints.length} GPS Pins`;
-
-      // Draw Trajectory Line & Calculate Distance
-      let totalDistanceMeters = 0;
-      if (showTrajectory && validPoints.length > 1) {
-        for (let i = 0; i < validPoints.length - 1; i++) {
-          totalDistanceMeters += calculateDistance(
-            validPoints[i][0], validPoints[i][1],
-            validPoints[i+1][0], validPoints[i+1][1]
-          );
-        }
-
-        const polyline = L.polyline(validPoints, {
-          color: '#10b981',
-          weight: 2.5,
-          opacity: 0.8,
-          className: 'trajectory-path'
-        });
-        polyline.addTo(trajectoryLayer);
-
-        // Show Trajectory summary banner
-        const trajBanner = document.getElementById('trajectoryBanner');
-        trajBanner.classList.remove('hidden');
-        document.getElementById('trajectoryPointsCount').textContent = `${validPoints.length} Route Points`;
-        document.getElementById('trajectoryDistance').textContent = totalDistanceMeters > 1000 
-          ? `${(totalDistanceMeters / 1000).toFixed(2)} km`
-          : `${Math.round(totalDistanceMeters)} meters`;
-      } else {
-        document.getElementById('trajectoryBanner').classList.add('hidden');
-      }
+      document.getElementById('mapGpsBadge').textContent = `${validGpsPoints.length} Active Devices`;
 
       // If user location is active, update user line
       if (trackingUser && userLocation) {
         renderUserLocationAndLine();
-      } else if (validPoints.length > 0 && !window.hasFitInitialBounds) {
+      } else if (validGpsPoints.length > 0 && !window.hasFitInitialBounds) {
         window.hasFitInitialBounds = true;
-        const bounds = L.latLngBounds(validPoints);
+        const bounds = L.latLngBounds(validGpsPoints);
         map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
       }
+    }
+
+    // Isolate Device History Route on Map
+    window.isolateDeviceHistory = function(deviceId) {
+      activeDeviceTrailId = deviceId;
+      const dev = allDevices.find(d => d.device_id === deviceId);
+      if (!dev) return;
+
+      // Show active filter indicator banner
+      const banner = document.getElementById('activeDeviceFilterBanner');
+      if (banner) {
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+        document.getElementById('activeDeviceFilterId').textContent = deviceId;
+      }
+
+      // Update map & table
+      updateMapMarkers();
+      renderTable();
+
+      // Scroll map to view
+      const mapEl = document.getElementById('mapContainerCard') || document.getElementById('map');
+      if (mapEl) {
+        mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      showToast(`Showing route trail for ${deviceId} (${dev.gps_checkins} GPS fixes)`, 'location');
+      if (soundEnabled && typeof playNotificationSound === 'function') playNotificationSound();
+    };
+
+    // Return back to Fleet Overview (All Devices)
+    window.clearDeviceHistoryIsolation = function() {
+      activeDeviceTrailId = null;
+      stopRoutePlayback();
+
+      const banner = document.getElementById('activeDeviceFilterBanner');
+      if (banner) {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }
+
+      const hud = document.getElementById('deviceTrailHUD');
+      if (hud) hud.classList.add('hidden');
+
+      updateMapMarkers();
+      fitAllMapBounds();
+      renderTable();
+
+      showToast('Showing all devices fleet', 'info');
+    };
+
+    // Fit isolated device trail to map bounds
+    window.fitDeviceTrailBounds = function() {
+      if (!activeDeviceTrailId || !map) return;
+      const dev = allDevices.find(d => d.device_id === activeDeviceTrailId);
+      if (!dev) return;
+      const points = dev.trail
+        .map(p => [cleanCoord(p.lat), cleanCoord(p.lon)])
+        .filter(p => p[0] !== null && p[1] !== null);
+      if (points.length > 0) {
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds, { maxZoom: 16, padding: [60, 60] });
+        showToast(`Centered on ${points.length} waypoints of ${dev.device_id}`, 'radar');
+      }
+    };
+
+    // Route Playback Animation Controls
+    window.toggleRoutePlayback = function() {
+      if (routePlaybackTimer) {
+        stopRoutePlayback();
+      } else {
+        startRoutePlayback();
+      }
+    };
+
+    function startRoutePlayback() {
+      if (!activeDeviceTrailId) return;
+      const dev = allDevices.find(d => d.device_id === activeDeviceTrailId);
+      if (!dev) return;
+      const points = dev.trail
+        .map(p => ({ lat: cleanCoord(p.lat), lon: cleanCoord(p.lon), timestamp: p.timestamp }))
+        .filter(p => p.lat !== null && p.lon !== null);
+
+      if (points.length < 2) {
+        showToast('Need at least 2 GPS fixes to animate route trail', 'warning');
+        return;
+      }
+
+      const playText = document.getElementById('playRouteText');
+      const playIcon = document.getElementById('playRouteIcon');
+      if (playText) playText.textContent = 'Pause';
+      if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
+      lucide.createIcons();
+
+      let step = 0;
+      if (!routePlaybackMarker) {
+        const pulseIcon = L.divIcon({
+          className: 'route-playback-pin',
+          html: `
+            <div class="relative flex items-center justify-center">
+              <div class="w-9 h-9 rounded-full bg-cyan-400/40 animate-ping absolute"></div>
+              <div class="w-6 h-6 rounded-full bg-cyan-500 border-2 border-white shadow-2xl flex items-center justify-center text-[10px] font-black text-slate-950">
+                ▶
+              </div>
+            </div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        });
+        routePlaybackMarker = L.marker([points[0].lat, points[0].lon], { icon: pulseIcon, zIndexOffset: 2000 }).addTo(map);
+      }
+
+      showToast(`Animating route: ${points.length} waypoints`, 'radar');
+      map.setView([points[0].lat, points[0].lon], Math.max(map.getZoom(), 15), { animate: true });
+
+      routePlaybackTimer = setInterval(() => {
+        step++;
+        if (step >= points.length) {
+          stopRoutePlayback();
+          showToast('Route playback completed', 'success');
+          return;
+        }
+        const pt = points[step];
+        routePlaybackMarker.setLatLng([pt.lat, pt.lon]);
+        map.panTo([pt.lat, pt.lon], { animate: true, duration: 0.8 });
+        showToast(`Waypoint #${step + 1} of ${points.length}`, 'location');
+      }, 1800);
+    }
+
+    function stopRoutePlayback() {
+      if (routePlaybackTimer) {
+        clearInterval(routePlaybackTimer);
+        routePlaybackTimer = null;
+      }
+      if (routePlaybackMarker && map) {
+        map.removeLayer(routePlaybackMarker);
+        routePlaybackMarker = null;
+      }
+      const playText = document.getElementById('playRouteText');
+      const playIcon = document.getElementById('playRouteIcon');
+      if (playText) playText.textContent = 'Play Route';
+      if (playIcon) playIcon.setAttribute('data-lucide', 'play');
+      lucide.createIcons();
     }
 
     // Select target for bearing line
@@ -2225,9 +2674,108 @@
       previousCount = total;
     }
 
-    // Filter targets
+    // Format timestamp nicely
+    function formatTimestamp(ts) {
+      if (!ts) return 'N/A';
+      try {
+        const parts = ts.split(' ');
+        if (parts.length === 2) {
+          return parts[1]; // HH:MM:SS
+        }
+        return ts;
+      } catch (e) {
+        return ts;
+      }
+    }
+
+    // Update Counts for tabs and switcher
+    function updateDeviceCounts() {
+      const bDev = document.getElementById('badgeDeviceCount');
+      const bLogs = document.getElementById('badgeLogsCount');
+      if (bDev) bDev.textContent = allDevices.length;
+      if (bLogs) bLogs.textContent = allTargets.length;
+    }
+
+    // Synthesize devices if server only returned raw targets
+    function synthesizeDevicesFromTargets(targets) {
+      const mapObj = {};
+      targets.forEach(t => {
+        let dId = t.device_id;
+        if (!dId) {
+          dId = 'dev_' + Math.abs((t.ip + t.os + t.browser).split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16).substring(0,8);
+        }
+        if (!mapObj[dId]) {
+          mapObj[dId] = {
+            device_id: dId,
+            first_seen: t.timestamp,
+            last_seen: t.timestamp,
+            total_checkins: 0,
+            gps_checkins: 0,
+            latest: t,
+            trail: []
+          };
+        }
+        const dev = mapObj[dId];
+        dev.total_checkins++;
+        dev.last_seen = t.timestamp;
+        dev.latest = t;
+        if (cleanCoord(t.lat) !== null && cleanCoord(t.lon) !== null) {
+          dev.gps_checkins++;
+        }
+        dev.trail.push(t);
+      });
+      const list = Object.values(mapObj);
+      list.sort((a, b) => b.latest.id - a.latest.id);
+      return list;
+    }
+
+    // Set View Mode ('devices' or 'logs')
+    window.setViewMode = function(mode) {
+      viewMode = mode;
+      const devBtn = document.getElementById('viewModeDevicesBtn');
+      const logsBtn = document.getElementById('viewModeLogsBtn');
+      const hintText = document.getElementById('viewModeHintText');
+      const th1 = document.getElementById('thCol1');
+      const th2 = document.getElementById('thCol2');
+      const th3 = document.getElementById('thCol3');
+      const th4 = document.getElementById('thCol4');
+      const th5 = document.getElementById('thCol5');
+
+      if (mode === 'devices') {
+        if (devBtn) devBtn.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-200 bg-cyan-600 text-white shadow-md';
+        if (logsBtn) logsBtn.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-200';
+        if (hintText) {
+          hintText.innerHTML = '<span class="text-cyan-400 font-semibold">Unique Devices Mode:</span> Consolidated device fleet. Click <strong class="text-emerald-400">"View Route Trail"</strong> on any device to isolate its path on the map!';
+        }
+        if (th1) th1.textContent = 'Device & Identity';
+        if (th2) th2.textContent = 'Check-ins & Activity';
+        if (th3) th3.textContent = 'IP & Recon';
+        if (th4) th4.textContent = 'Latest Fix / Coords';
+        if (th5) th5.textContent = 'Actions';
+      } else {
+        if (devBtn) devBtn.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-200';
+        if (logsBtn) logsBtn.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition duration-200 bg-cyan-600 text-white shadow-md';
+        if (hintText) {
+          hintText.innerHTML = '<span class="text-cyan-400 font-semibold">All Logs Stream:</span> Raw chronological stream of all target check-in events.';
+        }
+        if (th1) th1.textContent = '# / Fix Status';
+        if (th2) th2.textContent = 'Device & Hardware';
+        if (th3) th3.textContent = 'IP & Network Recon';
+        if (th4) th4.textContent = 'Coordinates & Location';
+        if (th5) th5.textContent = 'Actions';
+      }
+      renderTable();
+      lucide.createIcons();
+    };
+
+    // Filter targets for raw logs view
     function getFilteredTargets() {
       let filtered = [...allTargets];
+
+      // If isolated to a device
+      if (activeDeviceTrailId) {
+        filtered = filtered.filter(t => t.device_id === activeDeviceTrailId);
+      }
 
       // Sort
       const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'newest';
@@ -2257,6 +2805,7 @@
         const q = searchQuery.toLowerCase().trim();
         filtered = filtered.filter(t => {
           return (
+            (t.device_id && t.device_id.toLowerCase().includes(q)) ||
             (t.ip && t.ip.toLowerCase().includes(q)) ||
             (t.os && t.os.toLowerCase().includes(q)) ||
             (t.platform && t.platform.toLowerCase().includes(q)) ||
@@ -2275,7 +2824,58 @@
       return filtered;
     }
 
-    // Set active filter
+    // Filter devices for unique devices view
+    function getFilteredDevices() {
+      let filtered = [...allDevices];
+
+      // If isolated to single device
+      if (activeDeviceTrailId) {
+        filtered = filtered.filter(d => d.device_id === activeDeviceTrailId);
+      }
+
+      // Filter Tab
+      if (activeFilter === 'gps') {
+        filtered = filtered.filter(d => d.gps_checkins > 0);
+      } else if (activeFilter === 'mobile') {
+        filtered = filtered.filter(d => /iphone|android|mobile/i.test(`${d.latest.os} ${d.latest.platform}`));
+      } else if (activeFilter === 'desktop') {
+        filtered = filtered.filter(d => !/iphone|android|mobile/i.test(`${d.latest.os} ${d.latest.platform}`));
+      }
+
+      // Search Query
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(d => {
+          const t = d.latest;
+          return (
+            d.device_id.toLowerCase().includes(q) ||
+            (t.ip && t.ip.toLowerCase().includes(q)) ||
+            (t.os && t.os.toLowerCase().includes(q)) ||
+            (t.platform && t.platform.toLowerCase().includes(q)) ||
+            (t.browser && t.browser.toLowerCase().includes(q)) ||
+            (t.city && t.city.toLowerCase().includes(q)) ||
+            (t.region && t.region.toLowerCase().includes(q)) ||
+            (t.country && t.country.toLowerCase().includes(q)) ||
+            (t.org && t.org.toLowerCase().includes(q)) ||
+            (t.isp && t.isp.toLowerCase().includes(q))
+          );
+        });
+      }
+
+      // Sorting
+      const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'newest';
+      if (sortVal === 'oldest') {
+        filtered.sort((a, b) => (a.latest.id || 0) - (b.latest.id || 0));
+      } else if (sortVal === 'accuracy') {
+        filtered.sort((a, b) => (cleanCoord(a.latest.accuracy) || 99999) - (cleanCoord(b.latest.accuracy) || 99999));
+      } else {
+        filtered.sort((a, b) => (b.latest.id || 0) - (a.latest.id || 0));
+      }
+
+      return filtered;
+    }
+
+    // Set active filter tab
     window.setFilter = function(filterName) {
       activeFilter = filterName;
       document.querySelectorAll('.filter-tab').forEach(tab => {
@@ -2288,18 +2888,187 @@
       renderTable();
     };
 
-    // Render Table Body
+    // Render Table Body (Directs to either Devices View or Logs View)
     function renderTable() {
+      if (viewMode === 'devices') {
+        renderDevicesTable();
+      } else {
+        renderLogsTable();
+      }
+    }
+
+    // Render Unique Devices Table
+    function renderDevicesTable() {
+      const devices = getFilteredDevices();
+      const tbody = document.getElementById('targetTableBody');
+      document.getElementById('tableShowingCount').textContent = `Showing ${devices.length} of ${allDevices.length} unique devices (${allTargets.length} total hits)`;
+
+      if (devices.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-16 text-center text-slate-400">
+              <i data-lucide="smartphone" class="w-10 h-10 mx-auto text-slate-600 mb-2.5"></i>
+              <p class="font-semibold text-slate-300">No matching devices found</p>
+              <p class="text-xs text-slate-500 mt-1">Try clearing your search query or selecting a different filter.</p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+      devices.forEach(dev => {
+        const latest = dev.latest;
+        const lat = cleanCoord(latest.lat);
+        const lon = cleanCoord(latest.lon);
+        const hasGps = (lat !== null && lon !== null);
+        const isMobile = /iphone|android|mobile/i.test(`${latest.os} ${latest.platform}`);
+        const isIsolated = (activeDeviceTrailId === dev.device_id);
+
+        html += `
+          <tr class="hover:bg-surface-850/80 transition duration-150 group border-b border-slate-800/60 ${isIsolated ? 'bg-cyan-950/25 ring-1 ring-cyan-500/30' : ''}">
+            
+            <!-- Device & Identity -->
+            <td class="py-4 px-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl ${isMobile ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'} border flex items-center justify-center shrink-0 shadow-md">
+                  <i data-lucide="${isMobile ? 'smartphone' : 'laptop'}" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0 max-w-xs">
+                  <div class="font-bold text-slate-100 truncate flex items-center space-x-1.5">
+                    <span>${latest.platform || latest.os || 'Unknown Device'}</span>
+                  </div>
+                  <div class="flex items-center space-x-1.5 mt-0.5">
+                    <span class="font-mono text-[11px] font-bold text-cyan-400 bg-surface-950 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                      ${dev.device_id}
+                    </span>
+                    <button onclick="copyText('${dev.device_id}', 'Device ID')" title="Copy Device ID" class="text-slate-500 hover:text-cyan-300 p-0.5 transition">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                    </button>
+                  </div>
+                  <div class="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                    ${latest.browser || 'Browser'} • ${latest.resolution || 'Resolution'}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Activity & Check-ins -->
+            <td class="py-4 px-4 whitespace-nowrap">
+              <div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${dev.gps_checkins > 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                    <i data-lucide="${dev.gps_checkins > 0 ? 'target' : 'radio'}" class="w-3 h-3 mr-1"></i>
+                    ${dev.total_checkins} Check-in${dev.total_checkins > 1 ? 's' : ''} (${dev.gps_checkins} GPS)
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono mt-1 space-y-0.5">
+                  <div class="text-slate-300">Latest: <span class="text-cyan-400 font-semibold">${formatTimestamp(dev.last_seen)}</span></div>
+                  ${dev.total_checkins > 1 ? `
+                    <div class="text-slate-500 text-[10px]">First: ${formatTimestamp(dev.first_seen)}</div>
+                  ` : ''}
+                </div>
+              </div>
+            </td>
+
+            <!-- IP & Network -->
+            <td class="py-4 px-4">
+              <div>
+                <div class="flex items-center space-x-1.5 font-mono text-xs text-cyan-400 font-semibold">
+                  <span class="truncate max-w-[180px]">${latest.ip}</span>
+                  <button onclick="copyText('${latest.ip}', 'IP')" title="Copy IP" class="text-slate-500 hover:text-cyan-300 p-0.5 transition">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="text-xs text-slate-300 flex items-center space-x-1 mt-0.5">
+                  ${latest.city && latest.city !== 'N/A' ? `
+                    <i data-lucide="map-pin" class="w-3 h-3 text-slate-500 shrink-0"></i>
+                    <span class="truncate">${latest.city}, ${latest.country}</span>
+                  ` : `
+                    <span class="text-slate-500 italic">Local / Private Network</span>
+                  `}
+                </div>
+                ${latest.org && latest.org !== 'N/A' ? `
+                  <div class="text-[10px] text-slate-500 truncate max-w-[200px]">
+                    ${latest.org}
+                  </div>
+                ` : ''}
+              </div>
+            </td>
+
+            <!-- Coordinates & Location -->
+            <td class="py-4 px-4">
+              ${hasGps ? `
+                <div>
+                  <div class="font-mono text-xs text-emerald-400 flex items-center space-x-1.5 font-bold">
+                    <span>${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+                    <button onclick="copyText('${lat}, ${lon}', 'Coordinates')" title="Copy Coordinates" class="text-slate-500 hover:text-emerald-300 p-0.5 transition">
+                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <div class="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
+                    <span class="text-emerald-300/80 font-mono text-[11px]">±${cleanCoord(latest.accuracy) ? cleanCoord(latest.accuracy).toFixed(0) + 'm acc' : '?'}</span>
+                    <span>•</span>
+                    <span class="font-mono text-[11px]">${cleanCoord(latest.altitude) ? cleanCoord(latest.altitude).toFixed(0) + 'm alt' : '0m alt'}</span>
+                  </div>
+                </div>
+              ` : `
+                <div class="text-xs text-slate-500 italic flex items-center space-x-1">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-slate-600"></i>
+                  <span>No GPS lock recorded yet</span>
+                </div>
+              `}
+            </td>
+
+            <!-- Actions -->
+            <td class="py-4 px-4 text-right whitespace-nowrap">
+              <div class="flex items-center justify-end space-x-2">
+                ${dev.gps_checkins > 0 ? `
+                  ${isIsolated ? `
+                    <button onclick="clearDeviceHistoryIsolation()" title="Clear Isolation & Show Fleet" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs transition flex items-center space-x-1.5 shadow-md">
+                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                      <span>Reset Map</span>
+                    </button>
+                  ` : `
+                    <button onclick="isolateDeviceHistory('${dev.device_id}')" title="Isolate this device's full route trail on the map" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold text-xs transition flex items-center space-x-1.5 shadow-md shadow-cyan-900/30">
+                      <i data-lucide="route" class="w-3.5 h-3.5"></i>
+                      <span>View Route Trail</span>
+                      <span class="px-1.5 py-0.2 rounded-full bg-black/40 text-[10px] text-cyan-200 font-mono">${dev.gps_checkins}</span>
+                    </button>
+                  `}
+                  <button onclick="zoomToMap(${lat}, ${lon})" title="Center latest fix on Map" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-cyan-400 hover:text-cyan-300 transition">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i>
+                  </button>
+                ` : ''}
+
+                <button onclick="openDeviceHistoryModal('${dev.device_id}')" title="View all historical check-in records for this device" class="px-2.5 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition flex items-center space-x-1">
+                  <span>History (${dev.total_checkins})</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </td>
+
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // Render Raw Check-in Logs Table
+    function renderLogsTable() {
       const targets = getFilteredTargets();
       const tbody = document.getElementById('targetTableBody');
-      document.getElementById('tableShowingCount').textContent = `Showing ${targets.length} of ${allTargets.length} entries`;
+      document.getElementById('tableShowingCount').textContent = `Showing ${targets.length} of ${allTargets.length} log entries`;
 
       if (targets.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="5" class="py-16 text-center text-slate-400">
               <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2.5"></i>
-              <p class="font-semibold text-slate-300">No telemetry targets found</p>
+              <p class="font-semibold text-slate-300">No telemetry log entries found</p>
               <p class="text-xs text-slate-500 mt-1">Try clearing your search query or selecting a different filter.</p>
             </td>
           </tr>
@@ -2314,6 +3083,7 @@
         const lon = cleanCoord(t.lon);
         const hasGps = (lat !== null && lon !== null);
         const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
+        const devId = t.device_id || 'dev_legacy';
 
         html += `
           <tr class="hover:bg-surface-850/80 transition duration-150 group border-b border-slate-800/60">
@@ -2326,13 +3096,16 @@
                 </span>
                 ${hasGps ? `
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                    <i data-lucide="satellite" class="w-3 h-3 mr-1"></i> GPS Locked
+                    <i data-lucide="satellite" class="w-3 h-3 mr-1"></i> GPS Fixed
                   </span>
                 ` : `
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
                     <i data-lucide="radio" class="w-3 h-3 mr-1"></i> IP Recon
                   </span>
                 `}
+              </div>
+              <div class="mt-1 font-mono text-[10px] text-cyan-400/90 truncate max-w-[120px]">
+                ${devId}
               </div>
             </td>
 
@@ -2407,8 +3180,8 @@
             <td class="py-4 px-4 text-right whitespace-nowrap">
               <div class="flex items-center justify-end space-x-2">
                 ${hasGps ? `
-                  <button onclick="selectTargetForBearing(${t.id})" title="Draw route line from My Location" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-blue-400 hover:text-blue-300 transition">
-                    <i data-lucide="navigation-2" class="w-4 h-4"></i>
+                  <button onclick="isolateDeviceHistory('${devId}')" title="Isolate this device's route trail" class="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-400 hover:text-cyan-300 transition">
+                    <i data-lucide="route" class="w-4 h-4"></i>
                   </button>
                   <button onclick="zoomToMap(${lat}, ${lon})" title="Center on Map" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-cyan-400 hover:text-cyan-300 transition">
                     <i data-lucide="crosshair" class="w-4 h-4"></i>
@@ -2431,6 +3204,162 @@
       tbody.innerHTML = html;
       lucide.createIcons();
     }
+
+    // Device History Modal (Timeline of all check-ins for a specific device)
+    window.openDeviceHistoryModal = function(deviceId) {
+      const dev = allDevices.find(d => d.device_id === deviceId);
+      if (!dev) return;
+
+      const modal = document.getElementById('deviceHistoryModal');
+      const badge = document.getElementById('devModalBadge');
+      const subtitle = document.getElementById('devModalSubtitle');
+      const content = document.getElementById('devModalContent');
+      const viewMapBtn = document.getElementById('devModalViewOnMapBtn');
+
+      if (badge) badge.textContent = dev.device_id;
+      if (subtitle) {
+        subtitle.textContent = `Total Check-ins: ${dev.total_checkins} (${dev.gps_checkins} GPS) • First: ${dev.first_seen} • Last: ${dev.last_seen}`;
+      }
+
+      const latest = dev.latest;
+      const isMobile = /iphone|android|mobile/i.test(`${latest.os} ${latest.platform}`);
+
+      let html = `
+        <!-- Device Identity Banner -->
+        <div class="p-4 bg-surface-950 rounded-2xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-9 h-9 rounded-xl ${isMobile ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'} border flex items-center justify-center font-bold">
+                <i data-lucide="${isMobile ? 'smartphone' : 'laptop'}" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="font-bold text-slate-100 text-sm">${latest.platform || latest.os || 'Unknown Device'}</div>
+                <div class="text-[11px] text-slate-400 font-mono">${latest.browser || 'Browser'} • ${latest.resolution || 'Resolution'}</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${dev.gps_checkins > 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+              ${dev.total_checkins} Recorded Hits
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-800 text-[11px] font-mono">
+            <div>
+              <span class="text-slate-500 block text-[10px]">Public IP</span>
+              <span class="text-cyan-400 font-bold truncate block">${latest.ip}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[10px]">Location</span>
+              <span class="text-slate-200 truncate block">${latest.city || 'N/A'}, ${latest.country || ''}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[10px]">Cores / RAM</span>
+              <span class="text-slate-300 font-semibold">${latest.cores || '?'} Cores / ${latest.ram || '?'}GB</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[10px]">ISP / Network</span>
+              <span class="text-slate-400 truncate block">${latest.isp || latest.org || 'Local Network'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chronological Waypoints Timeline -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+              <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
+              <span>Chronological Route Waypoints</span>
+            </h4>
+            <span class="text-xs text-slate-500 font-mono">${dev.trail.length} Check-ins</span>
+          </div>
+
+          <div class="relative pl-6 space-y-3 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-800">
+      `;
+
+      const trailSorted = [...dev.trail].sort((a, b) => a.id - b.id);
+      trailSorted.forEach((pt, idx) => {
+        const lat = cleanCoord(pt.lat);
+        const lon = cleanCoord(pt.lon);
+        const hasGps = (lat !== null && lon !== null);
+        const isLatest = (idx === trailSorted.length - 1);
+        const isFirst = (idx === 0);
+        const waypointNum = idx + 1;
+
+        html += `
+          <div class="relative group">
+            <div class="absolute -left-6 top-1 w-3 h-3 rounded-full border-2 ${isLatest ? 'bg-cyan-400 border-white ring-4 ring-cyan-500/20' : hasGps ? 'bg-emerald-400 border-surface-950' : 'bg-slate-700 border-surface-950'}"></div>
+
+            <div class="p-3 bg-surface-950/70 border ${isLatest ? 'border-cyan-500/50 bg-cyan-950/10' : 'border-slate-800'} rounded-xl space-y-1.5 text-xs">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono text-xs font-bold ${isLatest ? 'text-cyan-400' : 'text-slate-300'}">
+                    Fix #${waypointNum}
+                  </span>
+                  ${isLatest ? `
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">LATEST</span>
+                  ` : isFirst ? `
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">START</span>
+                  ` : ''}
+                  ${hasGps ? `
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">GPS FIXED</span>
+                  ` : `
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-800 text-slate-400">IP ONLY</span>
+                  `}
+                </div>
+                <span class="text-slate-400 font-mono text-[11px]">${pt.timestamp || 'N/A'}</span>
+              </div>
+
+              ${hasGps ? `
+                <div class="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1 border-t border-slate-800/60">
+                  <div>
+                    <span class="text-slate-500 block text-[10px]">Coordinates</span>
+                    <span class="text-emerald-400 font-bold">${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block text-[10px]">Precision</span>
+                    <span class="text-slate-300">±${cleanCoord(pt.accuracy) ? cleanCoord(pt.accuracy).toFixed(0) + 'm' : '?'} acc</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                  <button onclick="closeDeviceHistoryModal(); zoomToMap(${lat}, ${lon});" class="px-2.5 py-1 rounded-lg bg-surface-850 hover:bg-surface-800 text-cyan-400 text-[11px] font-semibold transition flex items-center space-x-1 border border-slate-700">
+                    <i data-lucide="crosshair" class="w-3 h-3"></i>
+                    <span>Zoom on Map</span>
+                  </button>
+                  <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="px-2.5 py-1 rounded-lg bg-surface-850 hover:bg-surface-800 text-emerald-400 text-[11px] font-semibold transition flex items-center space-x-1 border border-slate-700">
+                    <i data-lucide="map" class="w-3 h-3"></i>
+                    <span>Google Maps ↗</span>
+                  </a>
+                </div>
+              ` : `
+                <div class="text-[11px] text-slate-500 italic">No GPS coordinates recorded for this check-in</div>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      content.innerHTML = html;
+
+      if (viewMapBtn) {
+        viewMapBtn.onclick = () => {
+          closeDeviceHistoryModal();
+          isolateDeviceHistory(deviceId);
+        };
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeDeviceHistoryModal = function() {
+      const modal = document.getElementById('deviceHistoryModal');
+      if (modal) modal.classList.add('hidden');
+    };
 
     // Modal popup for target details
     window.openModal = function(id) {
@@ -3705,13 +4634,19 @@
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
       try {
-        // Fetch targets
+        // Fetch targets & devices
         const res = await fetch('/api/targets');
         if (!res.ok) throw new Error('Network error');
         const data = await res.json();
         allTargets = data.targets || [];
-        
+        allDevices = data.devices || [];
+
+        if (!allDevices || allDevices.length === 0) {
+          allDevices = synthesizeDevicesFromTargets(allTargets);
+        }
+
         // Update dashboard
+        updateDeviceCounts();
         updateStats(allTargets);
         updateMapMarkers(allTargets);
         renderTable();

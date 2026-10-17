@@ -58,7 +58,38 @@ class AdminHandler(BaseHTTPRequestHandler):
         if path == '/api/targets':
             try:
                 targets = db_manager.get_all_targets()
-                payload = json.dumps({"status": "success", "count": len(targets), "targets": targets}).encode('utf-8')
+                devices = db_manager.get_devices()
+                payload = json.dumps({
+                    "status": "success",
+                    "count": len(targets),
+                    "targets": targets,
+                    "devices": devices
+                }).encode('utf-8')
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except Exception as e:
+                err_payload = json.dumps({"status": "error", "message": str(e)}).encode('utf-8')
+                self.send_response(500)
+                self.send_cors_headers()
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(err_payload)
+            return
+
+        # REST API endpoint for unique devices
+        if path == '/api/devices':
+            try:
+                devices = db_manager.get_devices()
+                payload = json.dumps({
+                    "status": "success",
+                    "count": len(devices),
+                    "devices": devices
+                }).encode('utf-8')
                 self.send_response(200)
                 self.send_cors_headers()
                 self.send_header('Content-Type', 'application/json')

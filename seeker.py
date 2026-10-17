@@ -459,7 +459,13 @@ def data_parser():
                 send_telegram(result_json, 'error')
                 send_webhook(result_json, 'error')
 
-    csvout(data_row)
+    var_dev_id = ''
+    if 'info_json' in locals() and isinstance(info_json, dict):
+        var_dev_id = info_json.get('dev_id', '')
+    if not var_dev_id and 'result_json' in locals() and isinstance(result_json, dict):
+        var_dev_id = result_json.get('dev_id', '')
+
+    csvout(data_row, dev_id=var_dev_id)
     clear()
     return
 
@@ -478,13 +484,14 @@ def kmlout(var_lat, var_lon):
     utils.print(f'{G}[+] {C}Path : {W}{path_to_script}/{kml_fname}.kml')
 
 
-def csvout(row):
+def csvout(row, dev_id=None):
     with open(DATA_FILE, 'a') as csvfile:
         csvwriter = writer(csvfile)
         csvwriter.writerow(row)
     try:
         import db_manager
         item = {
+            "device_id": dev_id,
             "os": row[0] if len(row) > 0 else "N/A",
             "platform": row[1] if len(row) > 1 else "N/A",
             "cores": row[2] if len(row) > 2 else "N/A",
