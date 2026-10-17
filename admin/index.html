@@ -418,7 +418,7 @@
                 0 GPS Pins
               </span>
             </div>
-            <p class="text-[11px] text-slate-400 font-mono hidden sm:block">OpenStreetMap & Esri Satellite (Zero API Key Needed)</p>
+            <p class="text-[11px] text-slate-400 font-mono hidden sm:block">Google Maps & Satellite Radar (Zero Watermarks • 100% Free)</p>
           </div>
         </div>
 
@@ -427,23 +427,33 @@
           
           <!-- Layer Switcher Buttons -->
           <div class="flex items-center rounded-xl border border-slate-700/80 bg-surface-900 p-0.5 shadow-inner">
-            <button id="layerBtnSatellite" onclick="switchBaseLayer('satellite')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
+            <button id="layerBtnGoogleHybrid" onclick="switchBaseLayer('googleHybrid')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-cyan-600 text-white shadow transition flex items-center space-x-1" title="Google Satellite + Street Names">
+              <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+              <span>Google Hybrid</span>
+            </button>
+            <button id="layerBtnGoogleStreets" onclick="switchBaseLayer('googleStreets')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1" title="Google Maps Roadmap">
+              <i data-lucide="map" class="w-3.5 h-3.5"></i>
+              <span>Google Maps</span>
+            </button>
+            <button id="layerBtnSatellite" onclick="switchBaseLayer('satellite')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1" title="Esri World Imagery">
               <i data-lucide="satellite" class="w-3.5 h-3.5"></i>
               <span>Satellite</span>
             </button>
-            <button id="layerBtnStreets" onclick="switchBaseLayer('streets')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
-              <i data-lucide="map" class="w-3.5 h-3.5"></i>
-              <span>Streets</span>
-            </button>
-            <button id="layerBtnDark" onclick="switchBaseLayer('dark')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-cyan-600 text-white shadow transition flex items-center space-x-1">
+            <button id="layerBtnDark" onclick="switchBaseLayer('dark')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1" title="Dark Canvas (Zero Watermarks)">
               <i data-lucide="moon" class="w-3.5 h-3.5"></i>
               <span>Dark</span>
             </button>
-            <button id="layerBtnTopo" onclick="switchBaseLayer('topo')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
-              <i data-lucide="mountain" class="w-3.5 h-3.5"></i>
-              <span>Topo</span>
+            <button id="layerBtnStreets" onclick="switchBaseLayer('streets')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1" title="OpenStreetMap Standard">
+              <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+              <span>OSM</span>
             </button>
           </div>
+
+          <!-- Quick Google Maps Key Config -->
+          <button onclick="openSettingsModal()" title="Configure Google Maps API Key" class="px-2.5 py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white text-xs font-medium flex items-center space-x-1.5 transition">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="hidden xl:inline">Maps Key</span>
+          </button>
 
           <!-- My Location & Bearing to Target Toggle -->
           <button id="toggleUserLocationBtn" onclick="toggleUserLocation()" title="Show my current location & line to laptop" class="px-2.5 py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 transition">
@@ -973,6 +983,45 @@
       <!-- Settings Content -->
       <div class="space-y-4 text-xs">
         
+        <!-- Google Maps & API Key Settings -->
+        <div class="p-3.5 bg-surface-950 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="font-medium text-slate-200 text-xs">Google Maps Configuration</span>
+            </div>
+            <span id="gmapsStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Free Direct Tiles</span>
+          </div>
+          
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Google Maps (Hybrid & Streets) works immediately with <strong class="text-slate-300">zero credit card or setup required</strong>. If you have an official Google Cloud Maps API Key, enter it below to bind it.
+          </p>
+
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <label class="text-slate-300 font-medium">Google Maps API Key (Optional)</label>
+              <span id="gmapsKeySavedNotice" class="text-emerald-400 hidden font-mono text-[10px]">✓ Key Active</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="relative flex-1">
+                <input type="password" id="gmapsApiKeyInput" placeholder="AIzaSy... (leave blank for free direct mode)" class="w-full bg-surface-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 pr-8">
+                <button type="button" onclick="toggleGmapsKeyVisibility()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200" title="Toggle visibility">
+                  <i id="gmapsEyeIcon" data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <button onclick="saveGmapsApiKey()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg text-xs transition shrink-0">
+                Save Key
+              </button>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+              <span>Mode: <span id="gmapsActiveModeText" class="text-slate-400 font-mono">Direct Free Tiles (No Card)</span></span>
+              <button onclick="clearGmapsApiKey()" class="text-slate-400 hover:text-rose-400 underline">Reset / Clear</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Audio Ping Toggle -->
         <div class="flex items-center justify-between p-3 bg-surface-950 rounded-xl border border-slate-800">
           <div>
@@ -1039,7 +1088,7 @@
     let accuracyLayer = null;
     let trajectoryLayer = null;
     let userLocationLayer = null;
-    let activeBaseLayerName = 'dark';
+    let activeBaseLayerName = 'googleHybrid';
     let baseLayers = {};
     let soundEnabled = true;
     let showTrajectory = true;
@@ -1055,14 +1104,50 @@
     let activeNavTarget = null;
     let trackerState = { running: false, port: 8080, template_name: 'NearYou' };
 
-    // Available Tile Providers (All 100% Free - Zero API key required!)
+    // Google Maps API Key & Layer Management
+    function getGmapsApiKey() {
+      return localStorage.getItem('seeker_gmaps_api_key') || '';
+    }
+
+    function getGoogleTileUrl(lyr) {
+      const key = getGmapsApiKey();
+      return `https://mt{s}.google.com/vt/lyrs=${lyr}&x={x}&y={y}&z={z}` + (key ? `&key=${encodeURIComponent(key)}` : '');
+    }
+
+    // Available Tile Providers (All 100% Free - Zero Watermarks!)
     const TILE_PROVIDERS = {
+      googleHybrid: {
+        name: 'Google Hybrid',
+        url: () => getGoogleTileUrl('y'),
+        options: {
+          maxZoom: 21,
+          subdomains: ['0', '1', '2', '3'],
+          attribution: '&copy; Google Maps'
+        }
+      },
+      googleStreets: {
+        name: 'Google Maps',
+        url: () => getGoogleTileUrl('m'),
+        options: {
+          maxZoom: 21,
+          subdomains: ['0', '1', '2', '3'],
+          attribution: '&copy; Google Maps'
+        }
+      },
       satellite: {
         name: 'Esri Satellite',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         options: {
           maxZoom: 19,
           attribution: '&copy; Esri, Maxar, Earthstar Geographics'
+        }
+      },
+      dark: {
+        name: 'Dark Canvas',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        options: {
+          maxZoom: 19,
+          attribution: '&copy; Esri, HERE, Garmin'
         }
       },
       streets: {
@@ -1072,23 +1157,6 @@
           maxZoom: 19,
           subdomains: 'abc',
           attribution: '&copy; OpenStreetMap contributors'
-        }
-      },
-      dark: {
-        name: 'Carto Dark Matter',
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        options: {
-          maxZoom: 19,
-          subdomains: 'abcd',
-          attribution: '&copy; OpenStreetMap, &copy; CARTO'
-        }
-      },
-      topo: {
-        name: 'Esri Topographic',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-          maxZoom: 19,
-          attribution: '&copy; Esri, HERE, Garmin, USGS'
         }
       }
     };
@@ -1225,22 +1293,38 @@
 
       // Create Base Layers
       for (const [key, provider] of Object.entries(TILE_PROVIDERS)) {
-        baseLayers[key] = L.tileLayer(provider.url, provider.options);
+        const tileUrl = typeof provider.url === 'function' ? provider.url() : provider.url;
+        baseLayers[key] = L.tileLayer(tileUrl, provider.options);
       }
 
-      // Add default base layer (dark)
+      // Check saved layer preference (default to googleHybrid)
+      const savedLayer = localStorage.getItem('seeker_base_layer');
+      if (savedLayer && baseLayers[savedLayer]) {
+        activeBaseLayerName = savedLayer;
+      } else {
+        activeBaseLayerName = 'googleHybrid';
+      }
+
+      // Add active base layer
       baseLayers[activeBaseLayerName].addTo(map);
+
+      // Update button styles
+      document.querySelectorAll('.map-layer-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-300');
+      });
+      const activeBtnId = 'layerBtn' + activeBaseLayerName.charAt(0).toUpperCase() + activeBaseLayerName.slice(1);
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-cyan-600', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-300');
+      }
 
       // Add overlay groups
       accuracyLayer = L.layerGroup().addTo(map);
       trajectoryLayer = L.layerGroup().addTo(map);
       markersLayer = L.layerGroup().addTo(map);
       userLocationLayer = L.layerGroup().addTo(map);
-
-      // Fallback for dark layer if tile fails
-      baseLayers.dark.on('tileerror', function() {
-        console.warn('Dark tiles had issue, switching to OpenStreetMap fallback');
-      });
     }
 
     // Switch Base Map Layer
@@ -1252,6 +1336,7 @@
       
       // Add new
       activeBaseLayerName = layerKey;
+      localStorage.setItem('seeker_base_layer', layerKey);
       baseLayers[layerKey].addTo(map);
 
       // Update button styles
@@ -1269,6 +1354,85 @@
 
       showToast(`Map switched to ${TILE_PROVIDERS[layerKey].name}`, 'info');
     };
+
+    // Google Maps API Key Management
+    window.toggleGmapsKeyVisibility = function() {
+      const input = document.getElementById('gmapsApiKeyInput');
+      const icon = document.getElementById('gmapsEyeIcon');
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    };
+
+    window.saveGmapsApiKey = function() {
+      const input = document.getElementById('gmapsApiKeyInput');
+      const val = (input ? input.value : '').trim();
+      if (val) {
+        localStorage.setItem('seeker_gmaps_api_key', val);
+        showToast('Google Maps API Key saved!', 'success');
+      } else {
+        localStorage.removeItem('seeker_gmaps_api_key');
+        showToast('Google Maps API Key cleared (Free Direct Tiles active)', 'info');
+      }
+      updateGmapsUI();
+      rebuildGoogleLayers();
+    };
+
+    window.clearGmapsApiKey = function() {
+      const input = document.getElementById('gmapsApiKeyInput');
+      if (input) input.value = '';
+      localStorage.removeItem('seeker_gmaps_api_key');
+      showToast('Reset to Direct Free Google Tiles', 'info');
+      updateGmapsUI();
+      rebuildGoogleLayers();
+    };
+
+    function updateGmapsUI() {
+      const key = getGmapsApiKey();
+      const input = document.getElementById('gmapsApiKeyInput');
+      const badge = document.getElementById('gmapsStatusBadge');
+      const notice = document.getElementById('gmapsKeySavedNotice');
+      const modeText = document.getElementById('gmapsActiveModeText');
+
+      if (input && document.activeElement !== input) {
+        input.value = key;
+      }
+      if (key) {
+        if (badge) {
+          badge.textContent = 'API Key Active';
+          badge.className = 'text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono';
+        }
+        if (modeText) modeText.textContent = 'Custom API Key (Authorized)';
+        if (notice) notice.classList.remove('hidden');
+      } else {
+        if (badge) {
+          badge.textContent = 'Free Direct Tiles';
+          badge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono';
+        }
+        if (modeText) modeText.textContent = 'Direct Free Tiles (No Card/Key Needed)';
+        if (notice) notice.classList.add('hidden');
+      }
+    }
+
+    function rebuildGoogleLayers() {
+      if (!map) return;
+      ['googleHybrid', 'googleStreets'].forEach(k => {
+        if (baseLayers[k]) {
+          const isCurrent = (activeBaseLayerName === k);
+          if (isCurrent) map.removeLayer(baseLayers[k]);
+          const provider = TILE_PROVIDERS[k];
+          const tileUrl = typeof provider.url === 'function' ? provider.url() : provider.url;
+          baseLayers[k] = L.tileLayer(tileUrl, provider.options);
+          if (isCurrent) baseLayers[k].addTo(map);
+        }
+      });
+    }
 
     // Toggle Trajectory Path
     window.toggleTrajectory = function() {
@@ -2269,6 +2433,7 @@
     // Settings modal
     window.openSettingsModal = function() {
       document.getElementById('settingsModal').classList.remove('hidden');
+      updateGmapsUI();
       lucide.createIcons();
     };
     window.closeSettingsModal = function() {
@@ -3037,6 +3202,7 @@
     // Initialize application on load
     window.addEventListener('DOMContentLoaded', () => {
       initMap();
+      updateGmapsUI();
       fetchData();
       fetchTrackerStatus();
       startCountdown();

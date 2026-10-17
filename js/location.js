@@ -88,7 +88,7 @@ function information() {
 
 function locate(callback, errCallback) {
   if (navigator.geolocation) {
-    var optn = { enableHighAccuracy: true, timeout: 30000, maximumage: 0 };
+    var optn = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
     navigator.geolocation.getCurrentPosition(showPosition, showError, optn);
   }
 
