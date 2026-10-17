@@ -17,7 +17,18 @@ import shutil
 from time import sleep
 from os import path, kill, mkdir, getenv, environ, remove, devnull
 from json import loads, decoder
-from packaging import version
+import builtins
+
+# Headless safe input wrapper (prevents EOFError when running in background/docker)
+_real_input = builtins.input
+def _safe_input(prompt=''):
+    try:
+        if not sys.stdin.isatty():
+            return ''
+        return _real_input(prompt)
+    except (EOFError, KeyboardInterrupt):
+        return ''
+builtins.input = _safe_input
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-k', '--kml', help='KML filename')
@@ -197,7 +208,11 @@ def template_select(site):
             if templateNum >= 0 and templateNum < len(templ_json['templates']):
                 selected = templateNum
         else:
-            selected = int(input(f'{G}[>] {W}'))
+            inp = input(f'{G}[>] {W}').strip()
+            if not inp and not sys.stdin.isatty():
+                selected = 0
+            else:
+                selected = int(inp)
         if selected < 0:
             print()
             utils.print(f'{R}[-] {C}Invalid Input!{W}')

