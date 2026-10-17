@@ -1,16 +1,34 @@
-FROM alpine:latest
-RUN apk update 
-RUN apk add --no-cache \
-git \
-bash \
-musl-dev \
-linux-headers \
-python3 \
-py3-pip gcc \
-python3-dev \
-php php-json openssh
-RUN pip3 install --break-system-packages requests packaging psutil
-WORKDIR /root/seeker
-RUN git clone https://github.com/thewhiteh4t/seeker.git .
-EXPOSE 8080
-ENTRYPOINT ["/root/seeker/seeker.py"]
+FROM python:3.11-slim
+
+# Install system dependencies including PHP CLI for template rendering
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    php-cli \
+    php-json \
+    procps \
+    curl \
+    bash \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
+COPY . .
+
+# Ensure entrypoint and scripts are executable
+RUN chmod +x start.sh seeker.py admin_server.py
+
+# Expose ports:
+# 8080 - Seeker target landing link (open on the tracked laptop)
+# 8088 - Seeker Recon Admin Dashboard
+EXPOSE 8080 8088
+
+# Persistent database directory volume
+VOLUME ["/app/db"]
+
+ENTRYPOINT ["/app/start.sh"]

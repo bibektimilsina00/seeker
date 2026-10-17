@@ -15,7 +15,8 @@ imageUrl = os.getenv('IMAGE')
 desc = os.getenv("DESC")
 
 old = 'n'
-if not redirect and not sitename and not title and not imageUrl and not desc:
+config_exists = os.path.exists('template/custom_og_tags/index.html')
+if config_exists and not redirect and not sitename and not title and not imageUrl and not desc:
     old = input(G + '[+]' + C + ' Do you want to reuse previous configs? (Y/N) : ' + W)
 
 if old.lower() != 'y':

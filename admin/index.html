@@ -1,0 +1,2444 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seeker - Live Telemetry & Geolocation Intelligence</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+            },
+            surface: {
+              950: '#070b14',
+              900: '#0d1424',
+              850: '#111b30',
+              800: '#17243e',
+              700: '#223559',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #070b14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Leaflet Customizations */
+    .leaflet-popup-content-wrapper {
+      background: #0d1424 !important;
+      color: #f1f5f9 !important;
+      border: 1px solid #1e293b;
+      border-radius: 1rem !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+      padding: 0 !important;
+    }
+    .leaflet-popup-content {
+      margin: 14px 16px !important;
+      line-height: 1.4 !important;
+    }
+    .leaflet-popup-tip {
+      background: #0d1424 !important;
+      border: 1px solid #1e293b;
+    }
+    .leaflet-container {
+      font-family: 'Inter', system-ui, sans-serif !important;
+      background: #090d16 !important;
+    }
+
+    /* Clean Map Pin */
+    .clean-pin-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* User Location Pulse */
+    .user-pulse-dot {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-pulse-wave {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.35);
+      animation: userPulse 2s infinite ease-out;
+    }
+    @keyframes userPulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* Bearing Navigation Line */
+    .user-bearing-line {
+      stroke-dasharray: 6, 8;
+      animation: bearingDash 20s linear infinite;
+    }
+    @keyframes bearingDash {
+      to { stroke-dashoffset: -1000; }
+    }
+
+    /* Polyline Dash Animation */
+    .trajectory-path {
+      stroke-dasharray: 8, 8;
+      animation: dashMove 30s linear infinite;
+    }
+    @keyframes dashMove {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    /* Fullscreen Map Mode */
+    .map-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9999 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+    }
+  </style>
+</head>
+<body class="bg-[#070b14] text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-slate-950 flex flex-col">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-surface-900/90 backdrop-blur-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center space-x-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-cyan-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/25 ring-1 ring-white/20">
+          <i data-lucide="crosshair" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-extrabold text-base tracking-wider text-white">SEEKER <span class="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">TELEMETRY</span></h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+              SQLite Engine
+            </span>
+          </div>
+          <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+            <span class="font-mono text-cyan-400/90" id="lastUpdatedTime">Updated: Just now</span>
+            <span>•</span>
+            <span class="text-slate-500 font-mono">db/seeker.db</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Quick Actions -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        
+        <!-- Live Tracker Engine Status & Quick Control -->
+        <div id="trackerHeaderWidget" class="flex items-center space-x-1.5 rounded-xl border border-slate-700/80 bg-surface-850 p-1">
+          <div id="trackerStatusBadge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span id="trackerStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="trackerStatusText" class="font-mono text-[11px] hidden sm:inline">Tracker: RUNNING</span>
+          </div>
+          <button id="trackerActionBtn" onclick="openTrackerModal()" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm transition flex items-center space-x-1">
+            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+            <span>Tracker Controls</span>
+          </button>
+        </div>
+
+        <!-- Audio Alert Toggle -->
+        <button id="toggleAudioBtn" title="Toggle Sound Alert on new target" class="hidden md:flex items-center space-x-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 transition">
+          <i id="audioIcon" data-lucide="volume-2" class="w-4 h-4 text-cyan-400"></i>
+          <span class="text-[11px]" id="audioStatusText">Sound: ON</span>
+        </button>
+
+        <!-- Auto-Refresh Selector -->
+        <div class="flex items-center rounded-lg border border-slate-700/80 bg-surface-850 p-0.5">
+          <button id="toggleLiveBtn" class="flex items-center space-x-1.5 text-xs px-2.5 py-1 rounded-md text-slate-200 hover:text-white transition">
+            <span id="liveIndicatorDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="hidden lg:inline text-[11px]" id="liveStatusText">Auto</span>
+            <span id="countdownBadge" class="bg-surface-700 text-cyan-300 px-1.5 py-0.5 rounded text-[10px] font-mono">5s</span>
+          </button>
+          <select id="refreshIntervalSelect" class="bg-transparent text-[11px] text-slate-300 py-1 pr-1 pl-1 focus:outline-none cursor-pointer border-l border-slate-700/60">
+            <option value="3" class="bg-slate-900 text-slate-200">3s</option>
+            <option value="5" selected class="bg-slate-900 text-slate-200">5s</option>
+            <option value="10" class="bg-slate-900 text-slate-200">10s</option>
+            <option value="30" class="bg-slate-900 text-slate-200">30s</option>
+          </select>
+        </div>
+
+        <!-- Manual Refresh Button -->
+        <button id="refreshBtn" title="Refresh Now" class="p-2 rounded-lg border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition">
+          <i data-lucide="rotate-cw" class="w-4 h-4" id="refreshIcon"></i>
+        </button>
+
+        <!-- Export Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700 text-slate-200 font-medium transition">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="hidden sm:inline">Export</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 ml-0.5"></i>
+          </button>
+          <div class="absolute right-0 mt-1 w-44 bg-surface-900 border border-slate-700 rounded-xl shadow-2xl p-1.5 hidden group-hover:block hover:block z-50">
+            <a href="/api/export" download="telemetry.csv" class="flex items-center space-x-2 px-3 py-2 text-xs rounded-lg text-slate-200 hover:bg-surface-800 hover:text-cyan-400 transition">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+              <span>Export CSV (SQLite)</span>
+            </a>
+            <button onclick="exportJSON()" class="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-lg text-slate-200 hover:bg-surface-800 hover:text-cyan-400 transition text-left">
+              <i data-lucide="file-json" class="w-4 h-4 text-amber-400"></i>
+              <span>Export JSON</span>
+            </button>
+            <button onclick="exportKML()" class="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-lg text-slate-200 hover:bg-surface-800 hover:text-cyan-400 transition text-left">
+              <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i>
+              <span>Export KML (Google Earth)</span>
+            </button>
+            <button onclick="exportGeoJSON()" class="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-lg text-slate-200 hover:bg-surface-800 hover:text-cyan-400 transition text-left">
+              <i data-lucide="map" class="w-4 h-4 text-purple-400"></i>
+              <span>Export GeoJSON (GIS)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Settings / Clear Modal Button -->
+        <button onclick="openSettingsModal()" title="Dashboard Settings & Tools" class="p-2 rounded-lg border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 w-full">
+    
+    <!-- KPI Metrics (Clickable Quick Filters) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Total Hits Card -->
+      <div onclick="setFilter('all')" class="cursor-pointer bg-surface-900 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group transition duration-200 shadow-lg hover:shadow-cyan-500/10">
+        <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition"></div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+              <span>Total Captures</span>
+            </p>
+            <h3 id="statTotalHits" class="text-3xl font-extrabold text-white mt-1">--</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition duration-300">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+          <span class="text-cyan-400 flex items-center font-medium">
+            <i data-lucide="filter" class="w-3.5 h-3.5 mr-1"></i>
+            Click to view all
+          </span>
+          <span class="font-mono text-slate-500 text-[11px]" id="statLogFile">db/seeker.db</span>
+        </div>
+      </div>
+
+      <!-- GPS Precise Fixes Card -->
+      <div onclick="setFilter('gps')" class="cursor-pointer bg-surface-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group transition duration-200 shadow-lg hover:shadow-emerald-500/10">
+        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition"></div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+              <span>GPS Fixes</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1"></span>
+            </p>
+            <h3 id="statGpsFixed" class="text-3xl font-extrabold text-emerald-400 mt-1">--</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition duration-300">
+            <i data-lucide="satellite" class="w-6 h-6"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+          <span class="text-emerald-400 flex items-center font-medium">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5 mr-1"></i>
+            <span id="statGpsRate">0%</span>&nbsp;satellite lock
+          </span>
+          <span class="font-mono text-slate-400 text-[11px]" id="statAvgAccuracy">±--m avg</span>
+        </div>
+      </div>
+
+      <!-- Unique IPs Card -->
+      <div onclick="setFilter('all')" class="cursor-pointer bg-surface-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group transition duration-200 shadow-lg hover:shadow-indigo-500/10">
+        <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition"></div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Unique Public IPs</p>
+            <h3 id="statUniqueIps" class="text-3xl font-extrabold text-indigo-400 mt-1">--</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition duration-300">
+            <i data-lucide="globe" class="w-6 h-6"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+          <span class="text-indigo-400 flex items-center font-medium">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>
+            <span id="statCountriesCount">0</span>&nbsp;locations
+          </span>
+          <span class="font-mono text-slate-400 text-[11px]" id="statIpRatio">--</span>
+        </div>
+      </div>
+
+      <!-- Device Breakdown Card -->
+      <div onclick="setFilter('mobile')" class="cursor-pointer bg-surface-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 sm:p-5 relative overflow-hidden group transition duration-200 shadow-lg hover:shadow-amber-500/10">
+        <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Device Split</p>
+            <h3 id="statDeviceSplit" class="text-2xl font-bold text-amber-300 mt-1 truncate">--</h3>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition duration-300">
+            <i data-lucide="smartphone" class="w-6 h-6"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+          <span class="text-amber-400 flex items-center font-medium">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 mr-1"></i>
+            <span id="statTopPlatform">--</span>
+          </span>
+          <span class="text-slate-400 text-[11px]" id="statMobileRatio">--</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Map Section (The Hero Recon View) -->
+    <div id="mapContainerCard" class="bg-surface-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative transition-all duration-300">
+      
+      <!-- Map Header & Layer Toolbar -->
+      <div class="p-3.5 sm:px-5 border-b border-slate-800/80 bg-surface-850/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 z-20 relative">
+        
+        <!-- Left: Title & Live Badge -->
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="radar" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="font-bold text-sm text-slate-100 tracking-wide">Live Satellite & Target Radar</h2>
+              <span id="mapGpsBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                0 GPS Pins
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-mono hidden sm:block">OpenStreetMap & Esri Satellite (Zero API Key Needed)</p>
+          </div>
+        </div>
+
+        <!-- Right: Map Controls & Layer Switcher -->
+        <div class="flex items-center flex-wrap gap-2">
+          
+          <!-- Layer Switcher Buttons -->
+          <div class="flex items-center rounded-xl border border-slate-700/80 bg-surface-900 p-0.5 shadow-inner">
+            <button id="layerBtnSatellite" onclick="switchBaseLayer('satellite')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="satellite" class="w-3.5 h-3.5"></i>
+              <span>Satellite</span>
+            </button>
+            <button id="layerBtnStreets" onclick="switchBaseLayer('streets')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="map" class="w-3.5 h-3.5"></i>
+              <span>Streets</span>
+            </button>
+            <button id="layerBtnDark" onclick="switchBaseLayer('dark')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-cyan-600 text-white shadow transition flex items-center space-x-1">
+              <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+              <span>Dark</span>
+            </button>
+            <button id="layerBtnTopo" onclick="switchBaseLayer('topo')" class="map-layer-btn px-2.5 py-1 text-xs font-medium rounded-lg text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="mountain" class="w-3.5 h-3.5"></i>
+              <span>Topo</span>
+            </button>
+          </div>
+
+          <!-- My Location & Bearing to Target Toggle -->
+          <button id="toggleUserLocationBtn" onclick="toggleUserLocation()" title="Show my current location & line to laptop" class="px-2.5 py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 transition">
+            <i data-lucide="navigation-2" class="w-3.5 h-3.5 text-blue-400"></i>
+            <span class="hidden md:inline">Track to Laptop:</span>
+            <span id="userLocationStatusText" class="text-blue-400 font-semibold">LOCATE</span>
+          </button>
+
+          <!-- Trajectory Toggle -->
+          <button id="toggleRouteBtn" onclick="toggleTrajectory()" title="Connect target movement trajectory" class="px-2.5 py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 transition">
+            <i data-lucide="git-commit" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="hidden md:inline">History Route:</span>
+            <span id="routeStatusText" class="text-cyan-400 font-semibold">ON</span>
+          </button>
+
+          <!-- Accuracy Circles Toggle -->
+          <button id="toggleAccuracyBtn" onclick="toggleAccuracyCircles()" title="Show/Hide GPS Accuracy Rings" class="px-2.5 py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 text-xs font-medium flex items-center space-x-1.5 transition">
+            <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="hidden md:inline">Accuracy:</span>
+            <span id="accuracyStatusText" class="text-emerald-400 font-semibold">ON</span>
+          </button>
+
+          <!-- Fit All Bounds Button -->
+          <button onclick="fitAllMapBounds()" title="Fit all markers on screen" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white text-xs font-medium flex items-center space-x-1 transition">
+            <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-300"></i>
+            <span class="hidden sm:inline">Fit All</span>
+          </button>
+
+          <!-- Fullscreen Toggle Button -->
+          <button id="fullscreenMapBtn" onclick="toggleMapFullscreen()" title="Toggle Fullscreen Map Mode" class="p-1.5 rounded-xl border border-slate-700/80 bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white text-xs transition">
+            <i id="fullscreenIcon" data-lucide="expand" class="w-4 h-4 text-cyan-400"></i>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Map Viewport -->
+      <div id="map" class="w-full h-80 sm:h-[460px] z-10 bg-surface-950"></div>
+
+      <!-- User to Laptop Navigation Floating HUD -->
+      <div id="userNavHUD" class="absolute top-16 left-4 z-20 bg-surface-900/95 backdrop-blur-md border border-blue-500/40 rounded-2xl p-3.5 text-xs text-slate-200 hidden shadow-2xl flex flex-col space-y-2.5 max-w-xs transition-all duration-300">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2 text-blue-400 font-bold">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
+            <span>Live Vector to Laptop</span>
+          </div>
+          <button onclick="toggleUserLocation()" class="text-slate-400 hover:text-white p-1">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono bg-surface-950 p-2.5 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-slate-500 block text-[10px]">Distance to Laptop</span>
+            <span id="userDistanceText" class="text-emerald-400 font-bold text-sm">--</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px]">Bearing / Heading</span>
+            <span id="userBearingText" class="text-cyan-400 font-bold text-sm">--</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1.5 pt-0.5">
+          <button onclick="openNavToTarget('google')" class="flex-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-center transition flex items-center justify-center space-x-1">
+            <i data-lucide="map" class="w-3 h-3"></i>
+            <span>Google Maps</span>
+          </button>
+          <button onclick="openNavToTarget('apple')" class="flex-1 py-1.5 px-2 bg-surface-800 hover:bg-surface-700 text-slate-200 font-medium rounded-lg text-center transition border border-slate-700 flex items-center justify-center space-x-1">
+            <i data-lucide="compass" class="w-3 h-3"></i>
+            <span>Apple Maps</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Floating Trajectory Summary (visible when trajectory has > 1 point) -->
+      <div id="trajectoryBanner" class="absolute bottom-4 left-4 z-20 bg-surface-900/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 hidden shadow-xl flex items-center space-x-3">
+        <div class="flex items-center space-x-1.5 text-cyan-400 font-semibold">
+          <i data-lucide="route" class="w-4 h-4"></i>
+          <span id="trajectoryPointsCount">0 Points</span>
+        </div>
+        <span class="text-slate-600">|</span>
+        <div class="text-slate-300 font-mono text-[11px]">
+          Laptop Travel: <span id="trajectoryDistance" class="text-emerald-400 font-bold">0.00 km</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Filters, Search & Table Section -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
+      
+      <!-- Toolbar -->
+      <div class="p-4 sm:px-6 border-b border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Search -->
+        <div class="relative flex-1 max-w-lg">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search by IP, city, region, device, OS, ISP, platform..." 
+            class="w-full pl-10 pr-10 py-2 bg-surface-950/80 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner"
+          />
+          <button id="clearSearchBtn" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 hidden" title="Clear search">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Filter Tabs & Sort -->
+        <div class="flex items-center flex-wrap gap-2">
+          
+          <!-- Filter Buttons -->
+          <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 lg:pb-0">
+            <button onclick="setFilter('all')" data-filter="all" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-white shadow-sm transition">
+              All (<span id="countAll">0</span>)
+            </button>
+            <button onclick="setFilter('gps')" data-filter="gps" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="satellite" class="w-3 h-3 text-emerald-400"></i>
+              <span>GPS Only (<span id="countGps">0</span>)</span>
+            </button>
+            <button onclick="setFilter('mobile')" data-filter="mobile" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="smartphone" class="w-3 h-3 text-amber-400"></i>
+              <span>Mobile</span>
+            </button>
+            <button onclick="setFilter('desktop')" data-filter="desktop" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="monitor" class="w-3 h-3 text-blue-400"></i>
+              <span>Desktop</span>
+            </button>
+          </div>
+
+          <!-- Sort Select -->
+          <select id="sortSelect" onchange="renderTable()" class="bg-surface-850 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500">
+            <option value="newest">Sort: Newest First</option>
+            <option value="oldest">Sort: Oldest First</option>
+            <option value="accuracy">Sort: Best Accuracy</option>
+          </select>
+
+        </div>
+
+      </div>
+
+      <!-- Table View -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 bg-surface-950/60 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <th class="py-3.5 px-4"># / Fix Status</th>
+              <th class="py-3.5 px-4">Device & Hardware</th>
+              <th class="py-3.5 px-4">IP & Network Recon</th>
+              <th class="py-3.5 px-4">Coordinates & Location</th>
+              <th class="py-3.5 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="targetTableBody" class="divide-y divide-slate-800/60 text-sm">
+            <tr>
+              <td colspan="5" class="py-16 text-center text-slate-500">
+                <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-cyan-400 mb-3"></i>
+                <p class="font-medium">Connecting to telemetry feed...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer count & status -->
+      <div class="p-4 border-t border-slate-800/80 bg-surface-950/40 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span id="tableShowingCount" class="font-medium">Showing 0 of 0 entries</span>
+        <div class="flex items-center space-x-3 font-mono text-[11px] text-slate-500">
+          <span>Engine: <strong class="text-slate-400">SQLite (seeker.db)</strong></span>
+          <span>•</span>
+          <button onclick="openTrackerModal()" class="text-cyan-400 hover:underline">Tracker Controls</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Tracker Control & Template Launcher Modal -->
+  <div id="trackerModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 bg-surface-850 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-cyan-500 to-emerald-400 flex items-center justify-center text-white shadow-md">
+            <i data-lucide="radar" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-100">Tracker Engine Supervisor</h3>
+            <p class="text-xs text-slate-400">Launch and configure location tracking engine</p>
+          </div>
+        </div>
+        <button onclick="closeTrackerModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-surface-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+        
+        <!-- Live Status Card -->
+        <div class="p-4 bg-surface-950 rounded-2xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Tracker Engine Status</span>
+            <div id="modalTrackerStatePill" class="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span id="modalTrackerDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="modalTrackerStatus">ONLINE</span>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="bg-surface-900 p-2.5 rounded-xl border border-slate-800/80">
+              <span class="text-slate-500 block text-[10px]">Active Template</span>
+              <span id="modalActiveTemplate" class="text-slate-200 font-bold truncate block">NearYou</span>
+            </div>
+            <div class="bg-surface-900 p-2.5 rounded-xl border border-slate-800/80">
+              <span class="text-slate-500 block text-[10px]">Target Port</span>
+              <span id="modalActivePort" class="text-cyan-400 font-bold">:8080</span>
+            </div>
+          </div>
+
+          <!-- Active Link Box -->
+          <div id="modalActiveLinkBox" class="p-3 bg-surface-900 rounded-xl border border-cyan-500/30 flex items-center justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <span class="text-[10px] text-slate-500 block mb-0.5">Target URL (Open on the laptop you want to track):</span>
+              <a id="modalTargetUrlLink" href="http://localhost:8080" target="_blank" class="font-mono text-cyan-400 font-bold truncate block hover:underline text-xs">
+                http://localhost:8080
+              </a>
+            </div>
+            <div class="flex items-center space-x-1.5 shrink-0">
+              <button onclick="copyTargetLink()" title="Copy Link" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+              <a id="modalTargetUrlExternal" href="http://localhost:8080" target="_blank" title="Open Link" class="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Launch / Configure Section -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+            <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+            <span>Template & Port Options</span>
+          </h4>
+
+          <div class="space-y-3 bg-surface-950 p-4 rounded-2xl border border-slate-800">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Select Template</label>
+              <select id="modalTemplateSelect" onchange="onTemplateChange()" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
+                <option value="0" selected>🌦️ [0] NearYou - Weather & Nearby Places (Recommended)</option>
+                <option value="1">📁 [1] Google Drive - File Download Share</option>
+                <option value="2">💬 [2] WhatsApp - Group Chat Invite</option>
+                <option value="3">🔗 [3] WhatsApp Redirect - Group Invite with Redirect</option>
+                <option value="4">✈️ [4] Telegram - Channel / Group Invite</option>
+                <option value="5">📹 [5] Zoom - Video Meeting Conference</option>
+                <option value="6">🛡️ [6] Google ReCaptcha - Security Verification</option>
+                <option value="7">🌐 [7] Custom Link Preview - OpenGraph Tags</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Server Port</label>
+              <input type="number" id="modalPortInput" value="8080" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="8080" />
+            </div>
+
+            <!-- Dynamic Template Parameter Inputs -->
+            <div id="dynamicTemplateInputs" class="space-y-2.5 pt-1 hidden">
+              <!-- Injected dynamically based on template selection -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Start / Stop Action Buttons -->
+        <div class="flex items-center space-x-2 pt-1">
+          <button id="modalStartBtn" onclick="startTrackerFromUI()" class="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20">
+            <i data-lucide="play" class="w-4 h-4"></i>
+            <span id="modalStartBtnText">Start / Restart Tracker</span>
+          </button>
+          <button id="modalStopBtn" onclick="stopTrackerFromUI()" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-rose-600/20">
+            <i data-lucide="square" class="w-4 h-4"></i>
+            <span>Stop Tracker</span>
+          </button>
+        </div>
+
+        <!-- Console Runtime Output -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between text-slate-500 text-[10px] font-mono">
+            <span>Runtime Output Log</span>
+            <span>seeker_runtime.log</span>
+          </div>
+          <div id="modalTerminalBox" class="bg-surface-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 max-h-32 overflow-y-auto space-y-0.5">
+            <p class="text-slate-500">Service logs will appear here...</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-surface-950/60 flex items-center justify-end shrink-0">
+        <button onclick="closeTrackerModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+          Close Manager
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 bg-surface-850 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3">
+          <div id="modalIcon" class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-md">
+            <i data-lucide="crosshair" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="font-bold text-base text-slate-100">Target Telemetry Detail</h3>
+            <p id="modalSubtitle" class="text-xs text-slate-400 font-mono">ID: #0</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-surface-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div id="modalContent" class="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
+        <!-- Content will be injected dynamically by JavaScript -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-surface-950/60 flex items-center justify-between shrink-0">
+        <div id="modalFooterActions" class="flex items-center space-x-2">
+          <!-- External map action buttons inserted here -->
+        </div>
+        <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+          Close Inspector
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Settings & Database Modal -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-surface-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-white text-sm">Dashboard Settings</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Settings Content -->
+      <div class="space-y-4 text-xs">
+        
+        <!-- Audio Ping Toggle -->
+        <div class="flex items-center justify-between p-3 bg-surface-950 rounded-xl border border-slate-800">
+          <div>
+            <span class="font-medium text-slate-200 block">Audio Sonar Alert</span>
+            <span class="text-slate-500 text-[11px]">Play audio ping when a new target arrives</span>
+          </div>
+          <button id="modalAudioToggle" onclick="toggleAudio()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-white">
+            Enabled
+          </button>
+        </div>
+
+        <!-- Trajectory Route Line Toggle -->
+        <div class="flex items-center justify-between p-3 bg-surface-950 rounded-xl border border-slate-800">
+          <div>
+            <span class="font-medium text-slate-200 block">Movement Path Tracking</span>
+            <span class="text-slate-500 text-[11px]">Connect chronological GPS hits with route line</span>
+          </div>
+          <button id="modalRouteToggle" onclick="toggleTrajectory()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-white">
+            Enabled
+          </button>
+        </div>
+
+        <!-- Database Management -->
+        <div class="p-3 bg-surface-950 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-slate-200 block">SQLite Storage (db/seeker.db)</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">SQLite 3</span>
+          </div>
+          <p class="text-slate-400 text-[11px]">Clear all stored records in the SQLite database. A backup will be preserved as db/seeker.db.bak.</p>
+          <button onclick="confirmClearDatabase()" class="w-full py-2 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/60 text-rose-300 font-semibold rounded-lg text-xs transition flex items-center justify-center space-x-1.5">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Clear SQLite Database</span>
+          </button>
+        </div>
+
+      </div>
+
+      <button onclick="closeSettingsModal()" class="w-full py-2.5 bg-surface-800 hover:bg-surface-700 text-slate-200 font-medium text-xs rounded-xl transition">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-surface-950 py-4 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span class="font-mono text-[11px]">Seeker Telemetry Recon • SQLite & OpenStreetMap Engine (Zero API Key)</span>
+      <span class="text-[11px]">Personal Asset Geolocation & Telemetry Tracker</span>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    // Global State
+    let allTargets = [];
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let autoRefresh = true;
+    let refreshTimer = null;
+    let refreshSeconds = 5;
+    let countdown = 5;
+    let map = null;
+    let markersLayer = null;
+    let accuracyLayer = null;
+    let trajectoryLayer = null;
+    let userLocationLayer = null;
+    let activeBaseLayerName = 'dark';
+    let baseLayers = {};
+    let soundEnabled = true;
+    let showTrajectory = true;
+    let showAccuracy = true;
+    let isFullscreen = false;
+    let previousCount = 0;
+
+    // User Location & Tracking State
+    let userLocation = null;
+    let userAccuracy = null;
+    let trackingUser = false;
+    let userWatchId = null;
+    let activeNavTarget = null;
+    let trackerState = { running: false, port: 8080, template_name: 'NearYou' };
+
+    // Available Tile Providers (All 100% Free - Zero API key required!)
+    const TILE_PROVIDERS = {
+      satellite: {
+        name: 'Esri Satellite',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        options: {
+          maxZoom: 19,
+          attribution: '&copy; Esri, Maxar, Earthstar Geographics'
+        }
+      },
+      streets: {
+        name: 'OpenStreetMap',
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        options: {
+          maxZoom: 19,
+          subdomains: 'abc',
+          attribution: '&copy; OpenStreetMap contributors'
+        }
+      },
+      dark: {
+        name: 'Carto Dark Matter',
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        options: {
+          maxZoom: 19,
+          subdomains: 'abcd',
+          attribution: '&copy; OpenStreetMap, &copy; CARTO'
+        }
+      },
+      topo: {
+        name: 'Esri Topographic',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+          maxZoom: 19,
+          attribution: '&copy; Esri, HERE, Garmin, USGS'
+        }
+      }
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Clean numeric coordinates
+    function cleanCoord(val) {
+      if (!val || val === 'Not Available' || val === 'N/A' || val === 'null' || val === 'undefined') return null;
+      const clean = String(val).replace(' deg', '').replace(' m', '').trim();
+      const num = parseFloat(clean);
+      return (isNaN(num) || num === null) ? null : num;
+    }
+
+    // Convert Decimal Degrees to DMS format
+    function toDMS(deg, isLat) {
+      if (deg === null || isNaN(deg)) return 'N/A';
+      const absolute = Math.abs(deg);
+      const degrees = Math.floor(absolute);
+      const minutesNotTruncated = (absolute - degrees) * 60;
+      const minutes = Math.floor(minutesNotTruncated);
+      const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(1);
+      const direction = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+      return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
+    }
+
+    // Calculate Haversine distance in meters
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const phi1 = lat1 * Math.PI / 180;
+      const phi2 = lat2 * Math.PI / 180;
+      const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+      const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                Math.cos(phi1) * Math.cos(phi2) *
+                Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Calculate compass bearing
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+      const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+      const theta = Math.atan2(y, x);
+      const brng = (theta * 180 / Math.PI + 360) % 360;
+      const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'];
+      const index = Math.round(brng / 45) % 8;
+      return { deg: Math.round(brng), dir: directions[index] };
+    }
+
+    // Native Web Audio Sonar Ping (Sci-Fi Radar Sound)
+    function playSonarPing() {
+      if (!soundEnabled) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(820, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1640, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.38);
+      } catch (err) {
+        console.warn('Audio feedback failed:', err);
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let badgeColor = 'bg-surface-900 border-slate-700 text-slate-100';
+      let icon = 'info';
+      if (type === 'success') {
+        badgeColor = 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200';
+        icon = 'check-circle-2';
+      } else if (type === 'radar') {
+        badgeColor = 'bg-cyan-950/90 border-cyan-500/40 text-cyan-200';
+        icon = 'radar';
+      } else if (type === 'location') {
+        badgeColor = 'bg-blue-950/90 border-blue-500/40 text-blue-200';
+        icon = 'navigation-2';
+      } else if (type === 'error') {
+        badgeColor = 'bg-rose-950/90 border-rose-500/40 text-rose-200';
+        icon = 'alert-triangle';
+      }
+
+      toast.className = `px-4 py-3 rounded-xl text-xs font-medium shadow-2xl border flex items-center space-x-2.5 pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 backdrop-blur-md ${badgeColor}`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 350);
+      }, 3500);
+    }
+
+    // Copy to clipboard helper
+    window.copyText = function(text, label = 'Copied') {
+      if (!text || text === 'N/A') return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`${label} copied to clipboard!`, 'success');
+      }).catch(() => {
+        showToast(`Failed to copy to clipboard`, 'error');
+      });
+    };
+
+    // Initialize Leaflet Map
+    function initMap() {
+      map = L.map('map', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([20.5937, 78.9629], 4);
+
+      // Create Base Layers
+      for (const [key, provider] of Object.entries(TILE_PROVIDERS)) {
+        baseLayers[key] = L.tileLayer(provider.url, provider.options);
+      }
+
+      // Add default base layer (dark)
+      baseLayers[activeBaseLayerName].addTo(map);
+
+      // Add overlay groups
+      accuracyLayer = L.layerGroup().addTo(map);
+      trajectoryLayer = L.layerGroup().addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+      userLocationLayer = L.layerGroup().addTo(map);
+
+      // Fallback for dark layer if tile fails
+      baseLayers.dark.on('tileerror', function() {
+        console.warn('Dark tiles had issue, switching to OpenStreetMap fallback');
+      });
+    }
+
+    // Switch Base Map Layer
+    window.switchBaseLayer = function(layerKey) {
+      if (!baseLayers[layerKey] || !map) return;
+      
+      // Remove current
+      map.removeLayer(baseLayers[activeBaseLayerName]);
+      
+      // Add new
+      activeBaseLayerName = layerKey;
+      baseLayers[layerKey].addTo(map);
+
+      // Update button styles
+      document.querySelectorAll('.map-layer-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-300');
+      });
+
+      const activeBtnId = 'layerBtn' + layerKey.charAt(0).toUpperCase() + layerKey.slice(1);
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-cyan-600', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-300');
+      }
+
+      showToast(`Map switched to ${TILE_PROVIDERS[layerKey].name}`, 'info');
+    };
+
+    // Toggle Trajectory Path
+    window.toggleTrajectory = function() {
+      showTrajectory = !showTrajectory;
+      const text = document.getElementById('routeStatusText');
+      const modalBtn = document.getElementById('modalRouteToggle');
+      
+      if (showTrajectory) {
+        text.textContent = 'ON';
+        text.className = 'text-cyan-400 font-semibold';
+        if (modalBtn) modalBtn.textContent = 'Enabled';
+        showToast('Movement trajectory enabled', 'info');
+      } else {
+        text.textContent = 'OFF';
+        text.className = 'text-slate-400 font-semibold';
+        if (modalBtn) modalBtn.textContent = 'Disabled';
+        showToast('Movement trajectory hidden', 'info');
+      }
+      updateMapMarkers(allTargets);
+    };
+
+    // Toggle Accuracy Rings
+    window.toggleAccuracyCircles = function() {
+      showAccuracy = !showAccuracy;
+      const text = document.getElementById('accuracyStatusText');
+      if (showAccuracy) {
+        text.textContent = 'ON';
+        text.className = 'text-emerald-400 font-semibold';
+        showToast('GPS accuracy rings enabled', 'info');
+      } else {
+        text.textContent = 'OFF';
+        text.className = 'text-slate-400 font-semibold';
+        showToast('GPS accuracy rings hidden', 'info');
+      }
+      updateMapMarkers(allTargets);
+    };
+
+    // Toggle Map Fullscreen
+    window.toggleMapFullscreen = function() {
+      const container = document.getElementById('mapContainerCard');
+      const icon = document.getElementById('fullscreenIcon');
+      isFullscreen = !isFullscreen;
+
+      if (isFullscreen) {
+        container.classList.add('map-fullscreen');
+        icon.setAttribute('data-lucide', 'minimize');
+        document.body.classList.add('overflow-hidden');
+      } else {
+        container.classList.remove('map-fullscreen');
+        icon.setAttribute('data-lucide', 'expand');
+        document.body.classList.remove('overflow-hidden');
+      }
+      lucide.createIcons();
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 300);
+    };
+
+    // Toggle User Location & Draw Line from My Location to Target
+    window.toggleUserLocation = function() {
+      if (trackingUser) {
+        // Turn OFF
+        trackingUser = false;
+        if (userWatchId !== null) {
+          navigator.geolocation.clearWatch(userWatchId);
+          userWatchId = null;
+        }
+        userLocation = null;
+        if (userLocationLayer) userLocationLayer.clearLayers();
+        document.getElementById('userLocationStatusText').textContent = 'LOCATE';
+        document.getElementById('userLocationStatusText').className = 'text-blue-400 font-semibold';
+        document.getElementById('userNavHUD').classList.add('hidden');
+        showToast('My location tracking stopped', 'info');
+      } else {
+        // Turn ON
+        if (!navigator.geolocation) {
+          showToast('Geolocation is not supported by your browser', 'error');
+          return;
+        }
+
+        showToast('Locating your current position...', 'location');
+        document.getElementById('userLocationStatusText').textContent = 'ACQUIRING...';
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            handleUserLocationSuccess(pos);
+            userWatchId = navigator.geolocation.watchPosition(
+              handleUserLocationSuccess,
+              handleUserLocationError,
+              { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+            );
+          },
+          handleUserLocationError,
+          { enableHighAccuracy: true, timeout: 15000 }
+        );
+      }
+    };
+
+    function handleUserLocationSuccess(pos) {
+      trackingUser = true;
+      userLocation = [pos.coords.latitude, pos.coords.longitude];
+      userAccuracy = pos.coords.accuracy;
+
+      document.getElementById('userLocationStatusText').textContent = 'TRACKING';
+      document.getElementById('userLocationStatusText').className = 'text-emerald-400 font-semibold';
+
+      renderUserLocationAndLine();
+    }
+
+    function handleUserLocationError(err) {
+      console.warn('User location error:', err);
+      showToast(`Location access denied or unavailable: ${err.message}`, 'error');
+      trackingUser = false;
+      document.getElementById('userLocationStatusText').textContent = 'LOCATE';
+      document.getElementById('userLocationStatusText').className = 'text-blue-400 font-semibold';
+    }
+
+    function renderUserLocationAndLine() {
+      if (!map || !userLocationLayer || !userLocation) return;
+      userLocationLayer.clearLayers();
+
+      // 1. Draw User Location Pin
+      const userPinHtml = `
+        <div class="user-pulse-dot cursor-pointer" title="You Are Here">
+          <div class="user-pulse-wave"></div>
+          <div class="relative w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg flex items-center justify-center">
+            <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+          </div>
+        </div>
+      `;
+
+      const userIcon = L.divIcon({
+        className: 'user-pin-wrapper',
+        html: userPinHtml,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      const userMarker = L.marker(userLocation, { icon: userIcon });
+      userMarker.bindPopup(`
+        <div class="p-1 text-xs">
+          <strong class="text-blue-400 font-bold block mb-1">📍 You Are Here</strong>
+          <span class="font-mono text-slate-300">${userLocation[0].toFixed(5)}, ${userLocation[1].toFixed(5)}</span>
+          <p class="text-[10px] text-slate-500 mt-0.5">±${Math.round(userAccuracy)}m accuracy</p>
+        </div>
+      `);
+      userLocationLayer.addLayer(userMarker);
+
+      // Accuracy circle for user
+      if (userAccuracy) {
+        L.circle(userLocation, {
+          radius: userAccuracy,
+          color: '#3b82f6',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.1,
+          weight: 1.5,
+          dashArray: '3, 3'
+        }).addTo(userLocationLayer);
+      }
+
+      // 2. Find target to connect line to
+      const gpsTargets = allTargets.filter(t => cleanCoord(t.lat) !== null && cleanCoord(t.lon) !== null);
+      if (gpsTargets.length === 0) {
+        document.getElementById('userNavHUD').classList.add('hidden');
+        map.setView(userLocation, 15);
+        return;
+      }
+
+      let target = activeNavTarget || gpsTargets[gpsTargets.length - 1];
+      const targetLat = cleanCoord(target.lat);
+      const targetLon = cleanCoord(target.lon);
+
+      if (targetLat !== null && targetLon !== null) {
+        // Draw Navigation Line from My Location -> Laptop Target
+        const navLine = L.polyline([userLocation, [targetLat, targetLon]], {
+          color: '#38bdf8',
+          weight: 3.5,
+          opacity: 0.9,
+          className: 'user-bearing-line'
+        });
+        userLocationLayer.addLayer(navLine);
+
+        // Distance & Compass Bearing
+        const distMeters = calculateDistance(userLocation[0], userLocation[1], targetLat, targetLon);
+        const bearing = calculateBearing(userLocation[0], userLocation[1], targetLat, targetLon);
+
+        const distStr = distMeters >= 1000 
+          ? `${(distMeters / 1000).toFixed(2)} km`
+          : `${Math.round(distMeters)} m`;
+
+        document.getElementById('userDistanceText').textContent = distStr;
+        document.getElementById('userBearingText').textContent = `${bearing.deg}° ${bearing.dir}`;
+        document.getElementById('userNavHUD').classList.remove('hidden');
+
+        window.activeNavCoords = {
+          userLat: userLocation[0],
+          userLon: userLocation[1],
+          targetLat: targetLat,
+          targetLon: targetLon
+        };
+
+        const bounds = L.latLngBounds([userLocation, [targetLat, targetLon]]);
+        map.fitBounds(bounds, { padding: [70, 70], maxZoom: 16 });
+      }
+    }
+
+    // Open Turn-by-Turn Navigation
+    window.openNavToTarget = function(provider) {
+      if (!window.activeNavCoords) return;
+      const { userLat, userLon, targetLat, targetLon } = window.activeNavCoords;
+
+      if (provider === 'google') {
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLon}&destination=${targetLat},${targetLon}&travelmode=driving`, '_blank');
+      } else if (provider === 'apple') {
+        window.open(`https://maps.apple.com/?saddr=${userLat},${userLon}&daddr=${targetLat},${targetLon}&dirflg=d`, '_blank');
+      }
+    };
+
+    // Fit map to all valid points
+    window.fitAllMapBounds = function() {
+      if (!map) return;
+      const points = [];
+      allTargets.forEach(t => {
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+        if (lat !== null && lon !== null) {
+          points.push([lat, lon]);
+        }
+      });
+      if (userLocation) {
+        points.push(userLocation);
+      }
+
+      if (points.length > 0) {
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
+      } else {
+        showToast('No coordinates to focus on', 'info');
+      }
+    };
+
+    // Render Markers & Path on Map (CLEAN SLEEK PINS)
+    function updateMapMarkers(targets) {
+      if (!map || !markersLayer) return;
+
+      markersLayer.clearLayers();
+      accuracyLayer.clearLayers();
+      trajectoryLayer.clearLayers();
+
+      const validGpsTargets = [];
+      const validPoints = [];
+
+      // Sort targets chronologically
+      const sorted = [...targets].sort((a, b) => a.id - b.id);
+      const latestId = sorted.length > 0 ? sorted[sorted.length - 1].id : null;
+
+      sorted.forEach(t => {
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+
+        if (lat !== null && lon !== null) {
+          validGpsTargets.push(t);
+          validPoints.push([lat, lon]);
+
+          const acc = cleanCoord(t.accuracy);
+          const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
+          const isLatest = (t.id === latestId);
+
+          // Draw Accuracy Circle if enabled
+          if (showAccuracy && acc && acc > 0) {
+            L.circle([lat, lon], {
+              radius: acc,
+              color: isLatest ? '#22d3ee' : '#10b981',
+              fillColor: isLatest ? '#22d3ee' : '#10b981',
+              fillOpacity: 0.1,
+              weight: 1.5,
+              dashArray: '4, 4'
+            }).addTo(accuracyLayer);
+          }
+
+          // Clean, sleek, minimalist map marker pin
+          const pinColor = isLatest ? '#22d3ee' : '#10b981';
+          const customPinHtml = `
+            <div class="clean-pin-wrapper cursor-pointer group" onclick="selectTargetForBearing(${t.id})">
+              <div class="relative flex flex-col items-center">
+                <!-- Pin Bubble -->
+                <div class="w-6 h-6 rounded-full bg-surface-950 border-2 flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-125" style="border-color: ${pinColor}; box-shadow: 0 0 10px ${pinColor}40;">
+                  <span class="font-mono text-[9px] font-bold" style="color: ${pinColor};">#${t.id}</span>
+                </div>
+                <!-- Needle Pointer -->
+                <div class="w-1.5 h-1.5 rounded-full mt-0.5" style="background: ${pinColor}; box-shadow: 0 0 5px ${pinColor};"></div>
+              </div>
+            </div>
+          `;
+
+          const pinIcon = L.divIcon({
+            className: 'custom-clean-pin',
+            html: customPinHtml,
+            iconSize: [26, 32],
+            iconAnchor: [13, 30]
+          });
+
+          const marker = L.marker([lat, lon], { icon: pinIcon });
+
+          // Interactive Popup
+          const gmapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+          const appleMapsUrl = `https://maps.apple.com/?q=${lat},${lon}`;
+          const wazeUrl = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+          const dmsCoords = `${toDMS(lat, true)}, ${toDMS(lon, false)}`;
+
+          const popupHtml = `
+            <div class="p-1 space-y-2 text-xs">
+              <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5">
+                <div class="flex items-center space-x-1.5">
+                  <span class="px-1.5 py-0.5 rounded font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 text-[10px]">
+                    #${t.id}
+                  </span>
+                  <span class="font-semibold text-slate-100">${t.platform || 'Device'}</span>
+                </div>
+                <span class="text-[10px] text-slate-400">${isMobile ? '📱 Mobile' : '💻 Laptop'}</span>
+              </div>
+
+              <div class="space-y-1 font-mono text-[11px]">
+                <div class="text-slate-300">
+                  <strong class="text-slate-400 font-sans">IP:</strong> 
+                  <span class="text-cyan-400 font-bold">${t.ip}</span>
+                </div>
+                ${t.city && t.city !== 'N/A' ? `
+                  <div class="text-slate-300">
+                    <strong class="text-slate-400 font-sans">Loc:</strong> ${t.city}, ${t.country}
+                  </div>
+                ` : ''}
+                <div class="text-emerald-400 font-bold">
+                  ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                </div>
+                <div class="text-[10px] text-slate-400">
+                  ${dmsCoords}
+                </div>
+                ${acc ? `
+                  <div class="text-slate-400 text-[10px]">
+                    Accuracy: ±${acc.toFixed(1)}m ${cleanCoord(t.altitude) ? `• Alt: ${cleanCoord(t.altitude).toFixed(0)}m` : ''}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-1 text-[11px]">
+                <a href="${gmapsUrl}" target="_blank" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-cyan-400 transition flex items-center space-x-1">
+                  <span>Google Maps ↗</span>
+                </a>
+                <button onclick="selectTargetForBearing(${t.id})" class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium transition">
+                  Track Line
+                </button>
+                <button onclick="openModal(${t.id})" class="px-2 py-1 rounded bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
+                  Details
+                </button>
+              </div>
+            </div>
+          `;
+
+          marker.bindPopup(popupHtml, { maxWidth: 280 });
+          markersLayer.addLayer(marker);
+        }
+      });
+
+      // Update Map Badge
+      document.getElementById('mapGpsBadge').textContent = `${validPoints.length} GPS Pins`;
+
+      // Draw Trajectory Line & Calculate Distance
+      let totalDistanceMeters = 0;
+      if (showTrajectory && validPoints.length > 1) {
+        for (let i = 0; i < validPoints.length - 1; i++) {
+          totalDistanceMeters += calculateDistance(
+            validPoints[i][0], validPoints[i][1],
+            validPoints[i+1][0], validPoints[i+1][1]
+          );
+        }
+
+        const polyline = L.polyline(validPoints, {
+          color: '#10b981',
+          weight: 2.5,
+          opacity: 0.8,
+          className: 'trajectory-path'
+        });
+        polyline.addTo(trajectoryLayer);
+
+        // Show Trajectory summary banner
+        const trajBanner = document.getElementById('trajectoryBanner');
+        trajBanner.classList.remove('hidden');
+        document.getElementById('trajectoryPointsCount').textContent = `${validPoints.length} Route Points`;
+        document.getElementById('trajectoryDistance').textContent = totalDistanceMeters > 1000 
+          ? `${(totalDistanceMeters / 1000).toFixed(2)} km`
+          : `${Math.round(totalDistanceMeters)} meters`;
+      } else {
+        document.getElementById('trajectoryBanner').classList.add('hidden');
+      }
+
+      // If user location is active, update user line
+      if (trackingUser && userLocation) {
+        renderUserLocationAndLine();
+      } else if (validPoints.length > 0 && !window.hasFitInitialBounds) {
+        window.hasFitInitialBounds = true;
+        const bounds = L.latLngBounds(validPoints);
+        map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
+      }
+    }
+
+    // Select target for bearing line
+    window.selectTargetForBearing = function(id) {
+      const t = allTargets.find(item => item.id === id);
+      if (!t) return;
+      activeNavTarget = t;
+      if (!trackingUser) {
+        toggleUserLocation();
+      } else {
+        renderUserLocationAndLine();
+      }
+      showToast(`Tracking vector pointed to Target #${id}`, 'location');
+    };
+
+    // Zoom and highlight specific target on map
+    window.zoomToMap = function(lat, lon) {
+      if (!map) return;
+      map.setView([lat, lon], 16, { animate: true });
+      const mapEl = document.getElementById('mapContainerCard');
+      mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast(`Centered on ${lat.toFixed(4)}, ${lon.toFixed(4)}`, 'radar');
+    };
+
+    // Calculate and render dashboard stats
+    function updateStats(targets) {
+      const total = targets.length;
+      const gpsTargets = targets.filter(t => cleanCoord(t.lat) !== null && cleanCoord(t.lon) !== null);
+      const uniqueIps = new Set(targets.map(t => t.ip).filter(ip => ip && ip !== 'N/A')).size;
+      const countries = new Set(targets.map(t => t.country).filter(c => c && c !== 'N/A')).size;
+
+      // KPI elements
+      document.getElementById('statTotalHits').textContent = total;
+      document.getElementById('statGpsFixed').textContent = gpsTargets.length;
+      document.getElementById('statUniqueIps').textContent = uniqueIps;
+
+      // GPS Lock rate %
+      const rate = total > 0 ? Math.round((gpsTargets.length / total) * 100) : 0;
+      document.getElementById('statGpsRate').textContent = `${rate}%`;
+
+      // Average accuracy
+      let avgAcc = 0;
+      let accCount = 0;
+      gpsTargets.forEach(t => {
+        const a = cleanCoord(t.accuracy);
+        if (a) {
+          avgAcc += a;
+          accCount++;
+        }
+      });
+      document.getElementById('statAvgAccuracy').textContent = accCount > 0 
+        ? `±${(avgAcc / accCount).toFixed(0)}m avg`
+        : '±--m avg';
+
+      // Unique location info
+      document.getElementById('statCountriesCount').textContent = countries;
+      document.getElementById('statIpRatio').textContent = `${uniqueIps} distinct IPs`;
+
+      // Device breakdown
+      const mobileCount = targets.filter(t => /iphone|android|mobile/i.test(`${t.os} ${t.platform}`)).length;
+      const desktopCount = total - mobileCount;
+      const mobilePct = total > 0 ? Math.round((mobileCount / total) * 100) : 0;
+      document.getElementById('statDeviceSplit').textContent = `${mobilePct}% Mobile`;
+      document.getElementById('statMobileRatio').textContent = `${mobileCount} Mob / ${desktopCount} Desk`;
+
+      // Top Platform
+      const platforms = {};
+      targets.forEach(t => {
+        const key = t.platform || 'Unknown';
+        platforms[key] = (platforms[key] || 0) + 1;
+      });
+      let topP = '--';
+      let maxP = 0;
+      for (const [k, v] of Object.entries(platforms)) {
+        if (v > maxP) {
+          maxP = v;
+          topP = k;
+        }
+      }
+      document.getElementById('statTopPlatform').textContent = topP;
+
+      // Update Filter Pill Counts
+      document.getElementById('countAll').textContent = total;
+      document.getElementById('countGps').textContent = gpsTargets.length;
+
+      // Check if new targets arrived to trigger audio alert
+      if (previousCount > 0 && total > previousCount) {
+        playSonarPing();
+        showToast(`Telemetry update! ${total - previousCount} new capture(s)`, 'radar');
+      }
+      previousCount = total;
+    }
+
+    // Filter targets
+    function getFilteredTargets() {
+      let filtered = [...allTargets];
+
+      // Sort
+      const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'newest';
+      if (sortVal === 'newest') {
+        filtered.sort((a, b) => b.id - a.id);
+      } else if (sortVal === 'oldest') {
+        filtered.sort((a, b) => a.id - b.id);
+      } else if (sortVal === 'accuracy') {
+        filtered.sort((a, b) => {
+          const aAcc = cleanCoord(a.accuracy) || 999999;
+          const bAcc = cleanCoord(b.accuracy) || 999999;
+          return aAcc - bAcc;
+        });
+      }
+
+      // Filter Tab
+      if (activeFilter === 'gps') {
+        filtered = filtered.filter(t => cleanCoord(t.lat) !== null && cleanCoord(t.lon) !== null);
+      } else if (activeFilter === 'mobile') {
+        filtered = filtered.filter(t => /iphone|android|mobile/i.test(`${t.os} ${t.platform}`));
+      } else if (activeFilter === 'desktop') {
+        filtered = filtered.filter(t => !/iphone|android|mobile/i.test(`${t.os} ${t.platform}`));
+      }
+
+      // Search Query
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(t => {
+          return (
+            (t.ip && t.ip.toLowerCase().includes(q)) ||
+            (t.os && t.os.toLowerCase().includes(q)) ||
+            (t.platform && t.platform.toLowerCase().includes(q)) ||
+            (t.browser && t.browser.toLowerCase().includes(q)) ||
+            (t.city && t.city.toLowerCase().includes(q)) ||
+            (t.region && t.region.toLowerCase().includes(q)) ||
+            (t.country && t.country.toLowerCase().includes(q)) ||
+            (t.org && t.org.toLowerCase().includes(q)) ||
+            (t.isp && t.isp.toLowerCase().includes(q)) ||
+            (t.render && t.render.toLowerCase().includes(q)) ||
+            String(t.id) === q
+          );
+        });
+      }
+
+      return filtered;
+    }
+
+    // Set active filter
+    window.setFilter = function(filterName) {
+      activeFilter = filterName;
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        if (tab.dataset.filter === filterName) {
+          tab.className = 'filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-white shadow-sm transition';
+        } else {
+          tab.className = 'filter-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white transition';
+        }
+      });
+      renderTable();
+    };
+
+    // Render Table Body
+    function renderTable() {
+      const targets = getFilteredTargets();
+      const tbody = document.getElementById('targetTableBody');
+      document.getElementById('tableShowingCount').textContent = `Showing ${targets.length} of ${allTargets.length} entries`;
+
+      if (targets.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-16 text-center text-slate-400">
+              <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2.5"></i>
+              <p class="font-semibold text-slate-300">No telemetry targets found</p>
+              <p class="text-xs text-slate-500 mt-1">Try clearing your search query or selecting a different filter.</p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+      targets.forEach(t => {
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+        const hasGps = (lat !== null && lon !== null);
+        const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
+
+        html += `
+          <tr class="hover:bg-surface-850/80 transition duration-150 group border-b border-slate-800/60">
+            
+            <!-- ID & Status -->
+            <td class="py-4 px-4 whitespace-nowrap">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono text-xs font-bold text-slate-300 bg-surface-950 px-2 py-1 rounded-md border border-slate-800">
+                  #${t.id}
+                </span>
+                ${hasGps ? `
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    <i data-lucide="satellite" class="w-3 h-3 mr-1"></i> GPS Locked
+                  </span>
+                ` : `
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                    <i data-lucide="radio" class="w-3 h-3 mr-1"></i> IP Recon
+                  </span>
+                `}
+              </div>
+            </td>
+
+            <!-- Device & OS -->
+            <td class="py-4 px-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl ${isMobile ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'} border flex items-center justify-center shrink-0">
+                  <i data-lucide="${isMobile ? 'smartphone' : 'laptop'}" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 max-w-xs">
+                  <div class="font-semibold text-slate-100 truncate flex items-center space-x-1.5">
+                    <span>${t.platform || t.os || 'Unknown Device'}</span>
+                    <span class="text-[11px] text-slate-400 font-mono font-normal">(${t.cores || '?'} Cores)</span>
+                  </div>
+                  <div class="text-xs text-slate-400 font-mono truncate">
+                    ${t.browser || 'Browser'} • ${t.resolution || 'Resolution'}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- IP & Network -->
+            <td class="py-4 px-4">
+              <div>
+                <div class="flex items-center space-x-1.5 font-mono text-xs text-cyan-400 font-semibold">
+                  <span class="truncate max-w-[200px]">${t.ip}</span>
+                  <button onclick="copyText('${t.ip}', 'IP')" title="Copy IP" class="text-slate-500 hover:text-cyan-300 p-0.5 transition">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center space-x-1 mt-0.5">
+                  ${t.city && t.city !== 'N/A' ? `
+                    <i data-lucide="map-pin" class="w-3 h-3 text-slate-500 shrink-0"></i>
+                    <span class="truncate">${t.city}, ${t.country}</span>
+                  ` : `
+                    <span class="text-slate-500 italic">Local / Private Network</span>
+                  `}
+                </div>
+                ${t.org && t.org !== 'N/A' ? `
+                  <div class="text-[10px] text-slate-500 truncate max-w-[220px]">
+                    ${t.org}
+                  </div>
+                ` : ''}
+              </div>
+            </td>
+
+            <!-- Coordinates & Location -->
+            <td class="py-4 px-4">
+              ${hasGps ? `
+                <div>
+                  <div class="font-mono text-xs text-emerald-400 flex items-center space-x-1.5 font-bold">
+                    <span>${lat.toFixed(6)}, ${lon.toFixed(6)}</span>
+                    <button onclick="copyText('${lat}, ${lon}', 'Coordinates')" title="Copy Coordinates" class="text-slate-500 hover:text-emerald-300 p-0.5 transition">
+                      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <div class="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
+                    <span class="text-emerald-300/80 font-mono text-[11px]">±${cleanCoord(t.accuracy) ? cleanCoord(t.accuracy).toFixed(0) + 'm acc' : '?'}</span>
+                    <span>•</span>
+                    <span class="font-mono text-[11px]">${cleanCoord(t.altitude) ? cleanCoord(t.altitude).toFixed(0) + 'm alt' : '0m alt'}</span>
+                  </div>
+                </div>
+              ` : `
+                <div class="text-xs text-slate-500 italic flex items-center space-x-1">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-slate-600"></i>
+                  <span>No GPS fix obtained</span>
+                </div>
+              `}
+            </td>
+
+            <!-- Actions -->
+            <td class="py-4 px-4 text-right whitespace-nowrap">
+              <div class="flex items-center justify-end space-x-2">
+                ${hasGps ? `
+                  <button onclick="selectTargetForBearing(${t.id})" title="Draw route line from My Location" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-blue-400 hover:text-blue-300 transition">
+                    <i data-lucide="navigation-2" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="zoomToMap(${lat}, ${lon})" title="Center on Map" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-cyan-400 hover:text-cyan-300 transition">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i>
+                  </button>
+                  <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" title="Open in Google Maps" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700/80 text-emerald-400 hover:text-emerald-300 transition">
+                    <i data-lucide="map" class="w-4 h-4"></i>
+                  </a>
+                ` : ''}
+                <button onclick="openModal(${t.id})" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition flex items-center space-x-1">
+                  <span>Inspector</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </td>
+
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // Modal popup for target details
+    window.openModal = function(id) {
+      const t = allTargets.find(item => item.id === id);
+      if (!t) return;
+
+      const lat = cleanCoord(t.lat);
+      const lon = cleanCoord(t.lon);
+      const hasGps = (lat !== null && lon !== null);
+      const isMobile = /iphone|android|mobile/i.test(`${t.os} ${t.platform}`);
+
+      document.getElementById('modalTitle').textContent = `Target #${t.id} - ${t.platform || 'Device Telemetry'}`;
+      document.getElementById('modalSubtitle').textContent = `Public IP: ${t.ip} • Status: ${hasGps ? 'GPS Locked' : 'IP Recon Only'}`;
+
+      const content = `
+        <!-- Quick Summary Card -->
+        <div class="p-4 bg-surface-950/90 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl ${hasGps ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'} border flex items-center justify-center">
+              <i data-lucide="${hasGps ? 'satellite' : 'radio'}" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-bold text-slate-100 flex items-center space-x-2">
+                <span>${t.platform || 'Device'}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${hasGps ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'} font-normal">
+                  ${hasGps ? 'Precision Fixed' : 'IP Estimation'}
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 font-mono">${t.browser || 'Browser'} • ${t.resolution || 'Resolution'}</p>
+            </div>
+          </div>
+          <button onclick="copyTargetJSON(${t.id})" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-cyan-300 text-xs font-medium border border-slate-700 flex items-center space-x-1.5 transition">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copy Full JSON</span>
+          </button>
+        </div>
+
+        <!-- Hardware & Platform Specs -->
+        <div>
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+            <i data-lucide="cpu" class="w-4 h-4 mr-1.5 text-cyan-400"></i>
+            Hardware & Platform Fingerprint
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">Platform</span>
+              <span class="font-semibold text-slate-100">${t.platform || 'N/A'}</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">CPU Cores</span>
+              <span class="font-semibold text-slate-100 font-mono">${t.cores || 'N/A'} Cores</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">RAM</span>
+              <span class="font-semibold text-slate-100">${t.ram || 'N/A'}</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">Screen Dimensions</span>
+              <span class="font-semibold text-slate-100 font-mono">${t.resolution || 'N/A'}</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800 col-span-2">
+              <span class="text-slate-500 block mb-1">Operating System UserAgent</span>
+              <span class="font-mono text-slate-300 text-[11px] truncate block" title="${t.os}">${t.os || 'N/A'}</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800 col-span-2 sm:col-span-3">
+              <span class="text-slate-500 block mb-1">GPU Vendor & Renderer (WebGL)</span>
+              <span class="font-mono text-slate-200 text-[11px] block">${t.vendor || 'N/A'} • ${t.render || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Network & Geolocation Intelligence -->
+        <div>
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+            <i data-lucide="network" class="w-4 h-4 mr-1.5 text-indigo-400"></i>
+            Network & IP Intelligence
+          </h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800 col-span-2 sm:col-span-1">
+              <span class="text-slate-500 block mb-1">IP Address</span>
+              <div class="flex items-center space-x-1.5">
+                <span class="font-mono text-cyan-400 font-bold">${t.ip}</span>
+                <button onclick="copyText('${t.ip}', 'IP')" class="text-slate-500 hover:text-cyan-300">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">City / Region</span>
+              <span class="font-semibold text-slate-200">${t.city || 'N/A'}, ${t.region || 'N/A'}</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-500 block mb-1">Country</span>
+              <span class="font-semibold text-slate-200">${t.country || 'N/A'} (${t.continent || 'N/A'})</span>
+            </div>
+            <div class="bg-surface-950 p-3 rounded-xl border border-slate-800 col-span-2 sm:col-span-3">
+              <span class="text-slate-500 block mb-1">ISP / Organization</span>
+              <span class="font-semibold text-slate-200">${t.org || t.isp || 'Local / Private Network'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Satellite Geolocation Coordinates -->
+        <div>
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+            <i data-lucide="navigation" class="w-4 h-4 mr-1.5 text-emerald-400"></i>
+            Satellite Geolocation Data
+          </h4>
+          ${hasGps ? `
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-3">
+              <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block mb-1">Latitude (DD)</span>
+                <span class="font-mono text-emerald-400 font-bold">${lat.toFixed(6)}°</span>
+              </div>
+              <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block mb-1">Longitude (DD)</span>
+                <span class="font-mono text-emerald-400 font-bold">${lon.toFixed(6)}°</span>
+              </div>
+              <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block mb-1">Accuracy</span>
+                <span class="font-semibold text-emerald-300 font-mono">±${t.accuracy || 'N/A'}</span>
+              </div>
+              <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block mb-1">Altitude</span>
+                <span class="font-semibold text-slate-200 font-mono">${t.altitude || 'N/A'}</span>
+              </div>
+            </div>
+
+            <!-- DMS Coordinates Display -->
+            <div class="p-3 bg-surface-950 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="text-slate-500 block text-[11px]">Nautical / DMS Coordinates</span>
+                <span class="font-mono text-emerald-400 font-semibold text-xs">${toDMS(lat, true)} &nbsp; ${toDMS(lon, false)}</span>
+              </div>
+              <button onclick="copyText('${toDMS(lat, true)} ${toDMS(lon, false)}', 'DMS Coordinates')" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-slate-300 transition" title="Copy DMS">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Directions & Navigation Links -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+              <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow">
+                <i data-lucide="map" class="w-4 h-4"></i>
+                <span>Google Maps</span>
+              </a>
+              <a href="https://maps.apple.com/?q=${lat},${lon}" target="_blank" class="py-2.5 px-3 bg-surface-800 hover:bg-surface-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition border border-slate-700">
+                <i data-lucide="compass" class="w-4 h-4"></i>
+                <span>Apple Maps</span>
+              </a>
+              <button onclick="selectTargetForBearing(${t.id}); closeModal();" class="py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow">
+                <i data-lucide="navigation-2" class="w-4 h-4"></i>
+                <span>Track Line Here</span>
+              </button>
+            </div>
+          ` : `
+            <div class="bg-surface-950/60 border border-dashed border-slate-800 rounded-2xl p-6 text-center text-xs text-slate-400 space-y-2">
+              <i data-lucide="map-pin-off" class="w-8 h-8 mx-auto text-slate-600"></i>
+              <p class="font-medium text-slate-300">No Satellite GPS Fix Available</p>
+              <p class="text-[11px] text-slate-500">The client browser did not provide geolocation coordinates. IP recon is available above.</p>
+            </div>
+          `}
+        </div>
+      `;
+
+      // Modal Footer Actions
+      const footerHtml = hasGps ? `
+        <button onclick="zoomToMap(${lat}, ${lon}); closeModal();" class="px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center space-x-1.5 transition shadow">
+          <i data-lucide="crosshair" class="w-4 h-4"></i>
+          <span>Locate on Map</span>
+        </button>
+      ` : '';
+
+      document.getElementById('modalFooterActions').innerHTML = footerHtml;
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('detailModal').classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeModal = function() {
+      document.getElementById('detailModal').classList.add('hidden');
+    };
+
+    window.copyTargetJSON = function(id) {
+      const t = allTargets.find(item => item.id === id);
+      if (!t) return;
+      copyText(JSON.stringify(t, null, 2), `Target #${id} JSON`);
+    };
+
+    // Tracker Modal Controls
+    window.openTrackerModal = function() {
+      document.getElementById('trackerModal').classList.remove('hidden');
+      fetchTrackerStatus();
+      lucide.createIcons();
+    };
+
+    window.closeTrackerModal = function() {
+      document.getElementById('trackerModal').classList.add('hidden');
+    };
+
+    window.copyTargetLink = function() {
+      const port = trackerState.port || 8080;
+      const host = window.location.hostname || 'localhost';
+      const proto = window.location.protocol || 'http:';
+      const portPart = (proto === 'https:' && !window.location.port) || port == 80 || port == 443 ? '' : `:${port}`;
+      const link = `${proto}//${host}${portPart}`;
+      copyText(link, 'Target URL');
+    };
+
+    // Modal click out to close
+    document.getElementById('detailModal').addEventListener('click', (e) => {
+      if (e.target.id === 'detailModal') closeModal();
+    });
+    document.getElementById('trackerModal').addEventListener('click', (e) => {
+      if (e.target.id === 'trackerModal') closeTrackerModal();
+    });
+
+    // Escape key listener for modals
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeSettingsModal();
+        closeTrackerModal();
+      }
+    });
+
+    // Settings modal
+    window.openSettingsModal = function() {
+      document.getElementById('settingsModal').classList.remove('hidden');
+      lucide.createIcons();
+    };
+    window.closeSettingsModal = function() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    };
+
+    // Toggle Audio Feedback
+    window.toggleAudio = function() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('audioIcon');
+      const text = document.getElementById('audioStatusText');
+      const modalBtn = document.getElementById('modalAudioToggle');
+
+      if (soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-4 h-4 text-cyan-400';
+        text.textContent = 'Sound: ON';
+        if (modalBtn) modalBtn.textContent = 'Enabled';
+        showToast('Sonar audio alerts enabled', 'info');
+        playSonarPing();
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-4 h-4 text-slate-500';
+        text.textContent = 'Sound: OFF';
+        if (modalBtn) modalBtn.textContent = 'Disabled';
+        showToast('Sonar audio alerts muted', 'info');
+      }
+      lucide.createIcons();
+    };
+    document.getElementById('toggleAudioBtn').addEventListener('click', toggleAudio);
+
+    // Export JSON
+    window.exportJSON = function() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allTargets, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `seeker_telemetry_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('JSON exported successfully', 'success');
+    };
+
+    // Export KML (Google Earth)
+    window.exportKML = function() {
+      let placemarks = '';
+      allTargets.forEach(t => {
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+        if (lat !== null && lon !== null) {
+          placemarks += `
+      <Placemark>
+        <name>Target #${t.id} (${t.platform || 'Device'})</name>
+        <description><![CDATA[
+          <b>Target ID:</b> #${t.id}<br/>
+          <b>IP:</b> ${t.ip || 'N/A'}<br/>
+          <b>Device:</b> ${t.platform || t.os || 'N/A'}<br/>
+          <b>Accuracy:</b> ±${t.accuracy || 'N/A'}<br/>
+          <b>Altitude:</b> ${t.altitude || 'N/A'}
+        ]]></description>
+        <Point>
+          <coordinates>${lon},${lat},${cleanCoord(t.altitude) || 0}</coordinates>
+        </Point>
+      </Placemark>`;
+        }
+      });
+
+      const kmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Seeker Telemetry Tracks</name>
+    <description>GPS Geolocation Fixes recorded by Seeker</description>
+    ${placemarks}
+  </Document>
+</kml>`;
+
+      const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `seeker_tracks_${Date.now()}.kml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('KML file exported for Google Earth', 'success');
+    };
+
+    // Export GeoJSON (GIS)
+    window.exportGeoJSON = function() {
+      const features = [];
+      allTargets.forEach(t => {
+        const lat = cleanCoord(t.lat);
+        const lon = cleanCoord(t.lon);
+        if (lat !== null && lon !== null) {
+          features.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [lon, lat]
+            },
+            properties: {
+              id: t.id,
+              ip: t.ip,
+              platform: t.platform,
+              os: t.os,
+              browser: t.browser,
+              accuracy: t.accuracy,
+              altitude: t.altitude,
+              city: t.city,
+              country: t.country
+            }
+          });
+        }
+      });
+
+      const geoJson = {
+        type: "FeatureCollection",
+        features: features
+      };
+
+      const blob = new Blob([JSON.stringify(geoJson, null, 2)], { type: 'application/geo+json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `seeker_gis_${Date.now()}.geojson`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('GeoJSON exported successfully', 'success');
+    };
+
+    // Clear Database Confirm & Execute
+    window.confirmClearDatabase = function() {
+      if (confirm("Are you sure you want to clear all telemetry records from SQLite? A backup (seeker.db.bak) will be preserved.")) {
+        fetch('/api/clear', { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast('SQLite database cleared successfully!', 'success');
+              fetchData();
+              closeSettingsModal();
+            } else {
+              showToast('Failed to clear database: ' + data.message, 'error');
+            }
+          })
+          .catch(err => {
+            showToast('Clear request failed', 'error');
+          });
+      }
+    };
+
+    // Dynamic template parameters handling
+    window.onTemplateChange = function() {
+      const val = parseInt(document.getElementById('modalTemplateSelect').value, 10);
+      const container = document.getElementById('dynamicTemplateInputs');
+
+      let html = '';
+      if (val === 1) { // GDrive
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Google Drive File URL</label>
+            <input type="text" id="paramRedirect" value="https://drive.google.com" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://drive.google.com/file/d/..." />
+          </div>
+        `;
+      } else if (val === 2) { // WhatsApp
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
+            <input type="text" id="paramTitle" value="My Family & Friends" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+        `;
+      } else if (val === 3) { // WhatsApp Redirect
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
+            <input type="text" id="paramTitle" value="Work Updates" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Redirect WhatsApp URL</label>
+            <input type="text" id="paramRedirect" value="https://chat.whatsapp.com/invite" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+        `;
+      } else if (val === 4) { // Telegram
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Telegram Group / Channel Title</label>
+            <input type="text" id="paramTitle" value="News & Community" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+        `;
+      } else if (val === 6) { // Captcha
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Forward / Destination URL</label>
+            <input type="text" id="paramRedirect" value="https://google.com" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+        `;
+      } else if (val === 7) { // Custom OG
+        html = `
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Destination URL</label>
+            <input type="text" id="paramRedirect" value="https://google.com" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Preview Title</label>
+            <input type="text" id="paramTitle" value="Important Document" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          </div>
+        `;
+      }
+
+      if (html) {
+        container.innerHTML = html;
+        container.classList.remove('hidden');
+      } else {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+      }
+    };
+
+    // Fetch and update tracker supervisor status
+    async function fetchTrackerStatus() {
+      try {
+        const res = await fetch('/api/tracker/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        trackerState = data;
+        updateTrackerUI(data);
+      } catch (e) {
+        console.warn('Failed to fetch tracker status:', e);
+      }
+    }
+
+    function updateTrackerUI(status) {
+      const dot = document.getElementById('trackerStatusDot');
+      const text = document.getElementById('trackerStatusText');
+      const badge = document.getElementById('trackerStatusBadge');
+      const modalDot = document.getElementById('modalTrackerDot');
+      const modalPill = document.getElementById('modalTrackerStatePill');
+      const modalStatus = document.getElementById('modalTrackerStatus');
+      const activeTemplate = document.getElementById('modalActiveTemplate');
+      const activePort = document.getElementById('modalActivePort');
+      const targetLink = document.getElementById('modalTargetUrlLink');
+      const targetExt = document.getElementById('modalTargetUrlExternal');
+      const termBox = document.getElementById('modalTerminalBox');
+
+      const host = window.location.hostname || 'localhost';
+      const port = status.port || 8080;
+      const proto = window.location.protocol || 'http:';
+      const portPart = (proto === 'https:' && !window.location.port) || port == 80 || port == 443 ? '' : `:${port}`;
+      const url = `${proto}//${host}${portPart}`;
+
+      if (status.running) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        text.textContent = `Tracker: LIVE (${status.template_name || 'NearYou'} :${port})`;
+        badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+
+        modalDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        modalPill.className = 'flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+        modalStatus.textContent = 'ONLINE';
+        activeTemplate.textContent = status.template_name || 'NearYou';
+        activePort.textContent = `:${port}`;
+
+        targetLink.textContent = url;
+        targetLink.href = url;
+        targetExt.href = url;
+        document.getElementById('modalActiveLinkBox').classList.remove('opacity-50');
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        text.textContent = 'Tracker: OFFLINE';
+        badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700';
+
+        modalDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        modalPill.className = 'flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        modalStatus.textContent = 'OFFLINE';
+        activeTemplate.textContent = 'None';
+        activePort.textContent = '--';
+
+        targetLink.textContent = 'Tracker is stopped';
+        targetLink.removeAttribute('href');
+        targetExt.removeAttribute('href');
+        document.getElementById('modalActiveLinkBox').classList.add('opacity-50');
+      }
+
+      if (status.logs && status.logs.length > 0) {
+        termBox.innerHTML = status.logs.map(l => `<p class="truncate">${escapeHtml(l)}</p>`).join('');
+        termBox.scrollTop = termBox.scrollHeight;
+      }
+    }
+
+    // Start Tracker via Web UI
+    window.startTrackerFromUI = async function() {
+      const templateId = parseInt(document.getElementById('modalTemplateSelect').value, 10) || 0;
+      const port = parseInt(document.getElementById('modalPortInput').value, 10) || 8080;
+      
+      const env = {};
+      const redirectInput = document.getElementById('paramRedirect');
+      if (redirectInput) env['REDIRECT'] = redirectInput.value;
+      const titleInput = document.getElementById('paramTitle');
+      if (titleInput) env['TITLE'] = titleInput.value;
+
+      const btn = document.getElementById('modalStartBtn');
+      btn.disabled = true;
+      document.getElementById('modalStartBtnText').textContent = 'Launching Engine...';
+
+      try {
+        const res = await fetch('/api/tracker/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template_id: templateId, port: port, env: env })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast(`Tracker started on port ${port}!`, 'success');
+          trackerState = data;
+          updateTrackerUI(data);
+        } else {
+          showToast(`Failed to start: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        showToast('Failed to start tracker', 'error');
+      } finally {
+        btn.disabled = false;
+        document.getElementById('modalStartBtnText').textContent = 'Start / Restart Tracker';
+      }
+    };
+
+    // Stop Tracker via Web UI
+    window.stopTrackerFromUI = async function() {
+      try {
+        const res = await fetch('/api/tracker/stop', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('Tracker engine stopped', 'info');
+          trackerState = data;
+          updateTrackerUI(data);
+        }
+      } catch (err) {
+        showToast('Failed to stop tracker', 'error');
+      }
+    };
+
+    // Fetch data from API
+    async function fetchData() {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      try {
+        // Fetch targets
+        const res = await fetch('/api/targets');
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        allTargets = data.targets || [];
+        
+        // Update dashboard
+        updateStats(allTargets);
+        updateMapMarkers(allTargets);
+        renderTable();
+
+        // Also refresh tracker status in background
+        fetchTrackerStatus();
+
+        // Update timestamp
+        const now = new Date();
+        document.getElementById('lastUpdatedTime').textContent = `Updated: ${now.toLocaleTimeString()}`;
+      } catch (err) {
+        console.error('Failed to load targets:', err);
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => refreshIcon.classList.remove('animate-spin'), 400);
+        }
+      }
+    }
+
+    // Polling setup
+    function startCountdown() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      countdown = refreshSeconds;
+      document.getElementById('countdownBadge').textContent = `${countdown}s`;
+
+      refreshTimer = setInterval(() => {
+        if (!autoRefresh) return;
+        countdown--;
+        if (countdown <= 0) {
+          countdown = refreshSeconds;
+          fetchData();
+        }
+        document.getElementById('countdownBadge').textContent = `${countdown}s`;
+      }, 1000);
+    }
+
+    // Toggle auto-refresh
+    document.getElementById('toggleLiveBtn').addEventListener('click', () => {
+      autoRefresh = !autoRefresh;
+      const dot = document.getElementById('liveIndicatorDot');
+      const text = document.getElementById('liveStatusText');
+      const badge = document.getElementById('countdownBadge');
+
+      if (autoRefresh) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'Auto';
+        badge.classList.remove('hidden');
+        startCountdown();
+        showToast(`Auto-refresh resumed (${refreshSeconds}s)`, 'info');
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        text.textContent = 'Paused';
+        badge.classList.add('hidden');
+        showToast('Auto-refresh paused', 'info');
+      }
+    });
+
+    // Refresh interval selector
+    document.getElementById('refreshIntervalSelect').addEventListener('change', (e) => {
+      refreshSeconds = parseInt(e.target.value, 10) || 5;
+      countdown = refreshSeconds;
+      startCountdown();
+      showToast(`Refresh interval set to ${refreshSeconds}s`, 'info');
+    });
+
+    // Manual refresh
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      fetchData();
+      showToast('Data refreshed', 'success');
+      countdown = refreshSeconds;
+    });
+
+    // Search input
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      if (searchQuery) {
+        clearSearchBtn.classList.remove('hidden');
+      } else {
+        clearSearchBtn.classList.add('hidden');
+      }
+      renderTable();
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      clearSearchBtn.classList.add('hidden');
+      renderTable();
+    });
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      fetchData();
+      fetchTrackerStatus();
+      startCountdown();
+    });
+  </script>
+</body>
+</html>

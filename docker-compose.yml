@@ -1,0 +1,32 @@
+services:
+  seeker:
+    image: ghcr.io/bibektimilsina00/seeker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seeker_tracker
+    restart: unless-stopped
+    ports:
+      - "${TARGET_PORT:-8080}:8080"  # Target link port (open on the laptop to get location)
+      - "${ADMIN_PORT:-8089}:8088"  # Admin telemetry dashboard
+    volumes:
+      - ./db:/app/db      # Persistent SQLite database storage (db/seeker.db)
+      - ./logs:/app/logs  # Persistent log storage
+    environment:
+      - PORT=8080
+      - ADMIN_PORT=8088
+      - TEMPLATE=0        # 0 = NearYou (Default template). Can be changed to 1, 2, etc.
+      - DEBUG_HTTP=1      # Allows running behind HTTP / reverse proxies without SSL redirection issues
+    networks:
+      - default
+      - web
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/api/targets"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  default:
+  web:
+    external: true
