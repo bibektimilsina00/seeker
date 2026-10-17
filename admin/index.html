@@ -2465,7 +2465,7 @@
       }
 
       showToast(`Showing route trail for ${deviceId} (${dev.gps_checkins} GPS fixes)`, 'location');
-      if (soundEnabled && typeof playNotificationSound === 'function') playNotificationSound();
+      if (soundEnabled && typeof playSonarPing === 'function') playSonarPing();
     };
 
     // Return back to Fleet Overview (All Devices)
