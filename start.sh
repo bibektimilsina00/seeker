@@ -15,7 +15,7 @@ python3 db_manager.py
 # Export environment defaults
 export PORT="${PORT:-8080}"
 export ADMIN_PORT="${ADMIN_PORT:-8088}"
-export TEMPLATE="${TEMPLATE:-0}"
+export TEMPLATE="${TEMPLATE:-2}"
 export DEBUG_HTTP="${DEBUG_HTTP:-1}"
 
 # Cleanup any stale PID files

@@ -73,7 +73,11 @@ jobs:
           script: |
             echo "==> Deploying Seeker to VPS..."
             cd /opt/seeker
-            git pull origin master || true
+            curl -sSL https://raw.githubusercontent.com/bibektimilsina00/seeker/master/docker-compose.yml -o docker-compose.yml || true
+            if [ -f db/config.json ]; then
+              sed -i 's/"template_id": [0-9]*/"template_id": 2/g' db/config.json || true
+              sed -i 's/"template_name": "[^"]*"/"template_name": "WhatsApp"/g' db/config.json || true
+            fi
             docker compose pull
             docker compose down || true
             docker compose up -d --remove-orphans

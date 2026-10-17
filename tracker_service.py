@@ -24,8 +24,8 @@ CONFIG_FILE = os.path.join(BASE_DIR, 'db', 'config.json')
 tracker_process = None
 
 DEFAULT_CONFIG = {
-    "template_id": 0,
-    "template_name": "NearYou",
+    "template_id": 2,
+    "template_name": "WhatsApp",
     "port": 8080,
     "telegram": "",
     "webhook": "",
@@ -186,11 +186,11 @@ def start_tracker(config_dict=None):
     if config_dict and isinstance(config_dict, dict):
         cfg.update(config_dict)
 
-    template_id = int(cfg.get('template_id', 0))
+    template_id = int(cfg.get('template_id', 2))
     port = int(cfg.get('port', 8080))
 
     templates = get_templates()
-    template_name = "NearYou"
+    template_name = "WhatsApp"
     for t in templates:
         if t["id"] == template_id:
             template_name = t["name"]
