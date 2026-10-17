@@ -31,10 +31,10 @@ class AdminHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         parsed = urlparse(self.path)
         path = parsed.path
-        if path in ['/', '/index.html']:
+        if path in ['/', '/index.html', '/admin', '/admin/']:
             file_path = os.path.join(STATIC_DIR, 'index.html')
         else:
-            clean_path = path.lstrip('/')
+            clean_path = path[7:] if path.startswith('/admin/') else path.lstrip('/')
             file_path = os.path.join(STATIC_DIR, clean_path)
 
         if os.path.isfile(file_path):
