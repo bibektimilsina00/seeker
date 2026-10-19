@@ -71,7 +71,7 @@ if not img_name:
 if image.startswith('http'):
     og_image = image
 else:
-    og_image = f'https://seeker.riocut.com/images/{img_name}'
+    og_image = f'https://payment.riocut.com/images/{img_name}'
 
 img_type = 'image/png' if ((img_name and img_name.lower().endswith('.png')) or image.lower().endswith('.png')) else 'image/jpeg'
 site_name = os.getenv('SITENAME') or ('Gift Notification' if 'gift' in title.lower() else 'Chat Group')

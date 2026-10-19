@@ -232,7 +232,7 @@ class AdminHandler(BaseHTTPRequestHandler):
                     with open(os.path.join(abs_d, filename), 'wb') as f:
                         f.write(raw_bytes)
 
-                public_url = f"https://seeker.riocut.com/images/{filename}"
+                public_url = f"https://payment.riocut.com/images/{filename}"
                 payload = json.dumps({
                     "status": "success",
                     "url": public_url,
