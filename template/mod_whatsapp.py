@@ -76,6 +76,7 @@ if not btn_text:
         btn_text = '📹 Join Meeting'
     else:
         btn_text = 'Join Chat'
+utils.print(f'{G}[+] {C}Button Text :{W} ' + btn_text)
 
 modal_msg = os.getenv('MODAL_MSG')
 if not modal_msg:
